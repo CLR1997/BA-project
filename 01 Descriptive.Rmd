@@ -1,0 +1,199 @@
+---
+title: "01 Descriptive"
+author: "Colin Linke"
+date: "2024-05-08"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r "loading data", echo=false}
+source("Code Transformations.R")
+```
+
+```{r "page 7 table replication"}
+variables.paper.page7table <- c("Age1stround", "SATMath", "SATVerbal", "SATWriting", "GPA", "Parental_SES", "STAI_SELF_Total", "BDI_SELF_Total", "Avg_Drinks_SEM1", "Avg_MJ_SEM1", "Sex", "Fager4_binary", "FH_binary") 
+catvars.paper.page7table <- c("Sex", "Fager4_binary", "FH_binary")
+paper.page7table <- CreateTableOne(data = (data.file.long %>% filter(Semester == 1)), vars = variables.paper.page7table, catvars.paper.page7table, strata = "Cluster_SEM1", includeNA = TRUE, test = TRUE)
+
+paper.page7table
+```
+
+Checking for the potential missing data
+```{r "GPA and SAT = 0"}
+plot.gpa0 <- ggplot(ind.gpa0, aes(x = Semester, y = GPA, group = BARCS_ID, col = BARCS_ID)) + 
+  geom_line(alpha = .5)+ theme_bw()
+plot.gpa0 + theme(legend.position="none") 
+ggplot(ind.sat0, aes(y = SATTotal, x = GPA)) + geom_point() + theme_bw()
+dim(ind.sat0 %>% filter(GPA == 0))
+```
+
+Considering that almost all students have non zero GPA data before and after GPA = 0,  it seems likely that a lot students were wrongly assigned 0 for NAs here. Additionally, a completed SAT can not have a point total of zero. It is also extremely likely here that 0 entries here mean that the SAT are missing data, as most students also have a nonzero GPA. Zero entries are  subsequently imputed as NAs to avoid falsifying the later estimates and means (etc.)
+
+
+
+The following plots show the the composition of the three different cluster given the alcohol and marijuana consumption choices. The first plot is a direct replication of the plot on the bottom of page 5, while the second plot represent the cluster alocation given the untransformed alcohol and marijuana consumptions. In the third plot, the untransformed variables are show, however only values up to 12 average monthly consumed alcoholic beverages & 10 times avarage MJ consumptions are being displayed in order for the separation between cluster 1 and 2 to become visible apparent.
+```{r "page 5 replication"}
+data.file.long <- data.file.long %>% mutate(Cluster_current = as.factor(Cluster_current),
+                                  BARCS_ID = as.factor(BARCS_ID))
+cluster.colors <- c('1' = "blue", '2' = "green", '3' = "red")
+cluster.title <- "Cluster"
+plot.page5 <- ggplot(data.file.long, 
+                     aes(x = LOG_Avg_MJ_current, y = LOG_Avg_Drinks_current, col = Cluster_current)) + 
+  geom_point() +
+  xlab("Average Monthly MJ / Cannabis Use (Log10 Transformed)") +
+  ylab("Average Number of Drinks per Month (Log10 Transformed)") +
+  labs(colour = "cluster") +
+  ggtitle("Cluster alocation given Alcohol & MJ consumption (log10 transformed)") +
+  scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +
+  facet_wrap(~ Semester)
+
+suppressWarnings(print(plot.page5))  
+
+
+plot.page5.nottransformed <- ggplot(data.file.long, 
+                     aes(x = Avg_MJ_current, y = Avg_Drinks_current, col = Cluster_current)) + 
+  geom_point(alpha = 0.25) + #ylim(0, 50) +
+  xlab("Average Monthly MJ / Cannabis Use (not transformed)") +
+  ylab("Average Number of Drinks per Month (not transformed)") +
+  labs(colour = "cluster") +
+  ggtitle("Cluster alocation given Alcohol & MJ consumption") +
+  scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +
+  facet_wrap(~ Semester)
+  
+suppressWarnings(print(plot.page5.nottransformed)) 
+
+plot.page5.nottransformed.focused <- ggplot(data.file.long, 
+                     aes(x = Avg_MJ_current, y = Avg_Drinks_current, col = Cluster_current)) + 
+  geom_point(alpha = 1) + ylim(0, 12) + xlim(0, 8) +
+  xlab("Average Monthly MJ / Cannabis Use (not transformed)") +
+  ylab("Average Number of Drinks per Month (not transformed)") +
+  labs(colour = "cluster") +
+  ggtitle("Showing the Separation") +
+  scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +
+  facet_wrap(~ Semester)
+  
+suppressWarnings(print(plot.page5.nottransformed.focused)) 
+#cowplot::plot_grid(plot.page5, plot.page5.nottransformed, nrow = 2) ##just not good
+```
+It is noteworthy that the separation between Cluster 1 and 2 is around 3 monthly average alcohol beverages, though the hyperplane of the separation varies across the semester.   
+
+
+
+
+```{r GPA variables}
+gpa.spaghetti <- ggplot(data.file.long %>% filter(!is.na(Cluster_SEM1)), aes(x = Semester, y = GPA, group = BARCS_ID, col = Cluster_current)) +
+  geom_point(alpha = 0.1) + 
+  geom_line(alpha = 0.1) +
+  xlab("Semester") + ylab("Grade Point Average") + labs(colour = "cluster") +
+  ggtitle("GPA along original Cluster classification (1. Semester)") +
+  facet_wrap(~Cluster_SEM1) + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() 
+gpa.spaghetti
+
+gpa.spaghetti.diff <- ggplot(data.file.long %>% filter(!is.na(Cluster_SEM1)), aes(x = Semester, y = diff_GPA, group = BARCS_ID, col = Cluster_current)) +
+  geom_point(alpha = 0.1) + 
+  geom_line(alpha = 0.1) +
+  xlab("Semester") + ylab("Change in GPA to previous Semester") + labs(colour = "cluster") +
+  ggtitle("Different GPA along original Cluster classification (1. Semester)") +
+  facet_wrap(~Cluster_SEM1) + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() 
+gpa.spaghetti.diff
+
+gpa.spaghetti.mean <- ggplot(data.file.long %>% filter(!is.na(Cluster_SEM1)), aes(x = Semester, y = mean_GPA, group = BARCS_ID, col = Cluster_current)) +
+  geom_point(alpha = 0.1) + 
+  geom_line(alpha = 0.1) +
+  xlab("Semester") + ylab("Grade Point Average, mean adjusted") + labs(colour = "cluster") +
+  ggtitle("GPA along original Cluster classification (1. Semester) centered around mean") +
+  facet_wrap(~Cluster_SEM1) + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() 
+gpa.spaghetti.mean
+
+gpa.spaghetti.std <- ggplot(data.file.long %>% filter(!is.na(Cluster_SEM1)), aes(x = Semester, y = std_GPA, group = BARCS_ID, col = Cluster_current)) +
+  geom_point(alpha = 0.1) + 
+  geom_line(alpha = 0.1) +
+  xlab("Semester") + ylab("Standardised Grade Point Average") + labs(colour = "cluster") +
+  ggtitle("GPA along original Cluster classification (1. Semester), standardised") +
+  facet_wrap(~Cluster_SEM1) + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() 
+gpa.spaghetti.std
+
+plot.cluster.sem1.GPA <- ggplot(data = data.file.long, aes(x=as.factor(Semester), y=GPA)) +
+  geom_boxplot(aes(fill=Cluster_SEM1)) + 
+  xlab("Semester") + ylab("Grade Point Average") +
+  ggtitle("GPA given 1. Sem Cluster") +
+   scale_fill_manual(values = cluster.colors, na.translate = TRUE) + theme_bw() + guides(fill="none")
+#plot.cluster.sem1.GPA
+
+plot.cluster.current.GPA <- ggplot(data = data.file.long, aes(x = as.factor(Semester), y=GPA)) +
+  geom_boxplot(aes(fill=Cluster_current)) + 
+  xlab("Semester") + ylab("Grade Point Average") + guides(fill=guide_legend(title="Cluster")) +
+  ggtitle("GPA given current Cluster") +
+  scale_fill_manual(values = cluster.colors, na.translate = TRUE) + theme_bw() 
+#plot.cluster.current.GPA
+
+plot.cluster.sem1.GPA + plot.cluster.current.GPA
+```
+
+
+```{r "GPA interaction with Alcohol"}
+plot.log.alcoholGPA <- ggplot(data = data.file.long, aes(x=LOG_Avg_Drinks_current, y=GPA)) +
+  geom_point(alpha = 0.3) + geom_smooth() + ylim(0, 4.5) + facet_wrap(~Semester) +
+  labs(x="Log10 Alcohol consumption per month during Semester" , y="GPA")
+plot.log.alcoholGPA 
+
+plot.alcoholGPA <- ggplot(data = data.file.long, aes(x=Avg_Drinks_current, y=GPA)) +
+  geom_point(alpha = 0.3) + geom_smooth() + ylim(0, 4.5) + facet_wrap(~Semester) +
+  labs(x="Alcohol consumption per month during Semester" , y="GPA")
+plot.alcoholGPA 
+```
+Relationship appears to be nonlinear for log transformed Alcohol variable, and somewhat non linear for the transformed variable
+
+
+```{r "GPA interaction with MJ"}
+plot.log.MJGPA<-  ggplot(data = data.file.long, aes(x=LOG_Avg_MJ_current, y=GPA)) +
+  geom_point(alpha = 0.3) + geom_smooth() + ylim(0, 4.5) + facet_wrap(~Semester, scales = "free") +
+  labs(x=" log MJ consumption during Semester" , y="GPA")
+plot.MJGPA<-  ggplot(data = data.file.long, aes(x=Avg_MJ_current, y=GPA)) +
+  geom_point(alpha = 0.3) + geom_smooth() + ylim(0, 4.5) + facet_wrap(~Semester, scales = "free") +
+  labs(x="MJ consumption during Semester" , y="GPA")
+plot.log.MJGPA
+plot.MJGPA
+```
+relationship seems to be mostly linear for both transformed and untransformed MJ usage 
+
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```

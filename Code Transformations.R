@@ -3,6 +3,16 @@ library(tidyverse)
 library(readspss) 
 library(tableone)
 library(ggiraph)
+library(cowplot)
+library(patchwork)
+library(nlme)
+library(lme4)
+library(car)
+library(lattice)
+library(effects)
+library(sjPlot)
+library(lmerTest)
+library(sandwich)
 data.file <- read.sav("BARCS_Data_used_for_paper.sav")
 data.sem1 <- data.file %>% filter(Semester == 1)
 data.sem2 <- data.file %>% filter(Semester == 2)
@@ -55,7 +65,8 @@ data.file.long <- data.file.long %>%
          diff_LOG_Avg_Drinks_current = LOG_Avg_Drinks_current - lag(LOG_Avg_Drinks_current, 1),
          diff_LOG_Avg_MJ_current = LOG_Avg_MJ_current - lag(LOG_Avg_MJ_current, 1),
          diff_GPA = GPA - lag(GPA, 1),
-         diff_LOG_B30_current = Log_B30_current - lag(Log_B30_current, 1) 
+         diff_LOG_B30_current = Log_B30_current - lag(Log_B30_current, 1),
+         transition_current = as.numeric(Cluster_current) - lag(as.numeric(Cluster_current), 1)
   )
 
 data.file.long <- data.file.long %>%
@@ -83,6 +94,10 @@ data.file.long <- data.file.long %>%
            mean_Avg_MJ, std_Avg_MJ, diff_Avg_MJ_current, LOG_Avg_MJ_current, mean_LOG_Avg_MJ, std_LOG_Avg_MJ, 
            diff_LOG_Avg_MJ_current)
 
+## Cluster and student id need to be factors 
+data.file.long <- data.file.long %>% mutate(Cluster_current = as.factor(Cluster_current),
+                                            BARCS_ID = as.factor(BARCS_ID))
+
 
 ## Data selection required to identify if GPA = 0 and SAT = 0 are NAs
 ind.gpa0 <- data.file.long %>% filter(GPA == 0) %>% select(BARCS_ID, Semester, GPA)
@@ -106,10 +121,18 @@ data.file.long <- data.file.long %>% mutate(GPA = replace(GPA, GPA == 0, NA),
 data.file.long <- data.file.long %>% group_by(BARCS_ID) %>% 
   mutate(sum.GPAna = sum(is.na(GPA)))
 
-## Cluster and student id need to be factors 
-data.file.long <- data.file.long %>% mutate(Cluster_current = as.factor(Cluster_current),
-                                            BARCS_ID = as.factor(BARCS_ID))
+### include average GPA for each student 
+data.file.long <- data.file.long %>% group_by(BARCS_ID) %>% mutate(average_GPA = mean(GPA))
+#data.file.long <- data.file.long %>% arrange(sum.GPAna, average_GPA)
 
+data.file.long <- data.file.long %>% 
+  mutate(Sex = case_match(Sex, 1 ~ "male", 2 ~ "female", .default = NA),
+         Cluster_current = case_match(Cluster_current, '1' ~ "1st.cluster", '2' ~ "2nd.cluster",
+                                     '3' ~ "3rd.cluster", .default = NA),
+         Cluster_SEM1 = case_match(Cluster_SEM1, '1' ~ "1st.cluster", '2' ~ "2nd.cluster",
+                                   '3' ~ "3rd.cluster", .default = NA),
+         Fager4_binary = case_match(Fager4_binary, 1 ~ "smoker", 0 ~ "non smoker", .default = NA),
+         FH_binary = case_match(FH_binary, 0 ~ "negative", 1 ~ "positive", .default = NA))
 
 
 ## splitting the data into the different subsections of missing GPA data  (4 NAs means there is no GPA data -> dropped)
@@ -122,6 +145,8 @@ subset.3nagpas <- data.file.long %>% filter(sum.GPAna == 3) %>% arrange(average_
 
 
 
+
+### Group transition compares only the first semester to the last semester!!!!!!!!!
 
 
 

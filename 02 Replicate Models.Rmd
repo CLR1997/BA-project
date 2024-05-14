@@ -1,0 +1,117 @@
+---
+title: "Replicate Models"
+author: "Colin Linke"
+date: "2024-05-11"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+source("Code Transformations.R")
+data.file.long <- data.file.long %>% mutate(Semester = as.factor(Semester),
+                         Group_transition = as.factor(Group_transition),
+                         Group_transition1 = as.factor(Group_transition1),
+                         transition_current = as.factor(transition_current))
+```
+
+
+
+```{r "paper the three models"}
+
+full.model.lmer <- lmer(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES + Sex*Cluster_current + Semester*Cluster_current + Sex*Semester + Semester + (1 | BARCS_ID), data = data.file.long, na.action = na.exclude) 
+#summary(full.model.lmer)
+
+
+full.model.lmer.reduced.interactions <- lmer(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  + Semester*Cluster_current + Semester + (1 | BARCS_ID),data = data.file.long, na.action = na.exclude)
+#summary(full.model.lmer.reduced.interactions)
+
+fmlri.cov.matrix <- vcovHC(full.model.lmer.reduced.interactions)
+coeftest(full.model.lmer.reduced.interactions, vcov = fmlri.cov.matrix)
+
+small.model.lmer <- lmer(GPA ~ Cluster_current * Semester + (1| BARCS_ID), data = data.file.long, REML = FALSE)
+sml.cov.matrix()
+
+```
+
+
+```{r}
+anova(full.model.lmer.reduced.interactions, full.model.lmer)
+Anova(full.model.lmer)
+Anova(full.model.lmer.reduced.interactions)
+
+qqmath(full.model.lmer)
+dotplot(ranef(full.model.lmer))
+#library(effects)
+plot(effect("Cluster_current * Semester", full.model.lmer))
+#library(sjPlot)
+#sjPlot::plot_model(full.model.lmer, type = "re") Doesnt work 
+plot(full.model.lmer)
+
+```
+
+
+```{r "smaller model"}
+small.model.lm <- lm(GPA ~ Cluster_current * Semester, data = data.file.long, na.action = na.omit)
+small.model.lmer <- lmer(GPA ~ Cluster_current * Semester + (1| BARCS_ID), data = data.file.long, REML = FALSE)
+small.model.nlme <- lme(GPA ~ Cluster_current * Semester, data = data.file.long, na.action = na.omit, random = ~ 1 | BARCS_ID)
+
+summary(small.model.lm)
+summary(small.model.lmer)
+summary(small.model.nlme)
+
+plot(small.model.lm)
+plot(small.model.lmer)
+plot(small.model.nlme)
+
+```
+```{r anova}
+anova()
+```
+
+
+```{r "model paper Pseudo trajectory"}
+ 
+model.paper.pt.lmer <- lmer(GPA ~ 1 + Fager4_binary + FH_binary + Sex + Cluster_SEM1 + Semester + Age1stround + SATMath + SATVerbal + SATWriting + STAI_SELF_Total + BDI_SELF_Total + Parental_SES + Cluster_SEM1 * Semester + Group_transition1 * Semester + (1 | BARCS_ID), data = data.file.long)
+
+model.paper.pt.lmer2 <- lmer(GPA ~ 1 + Fager4_binary + FH_binary + Sex + Cluster_SEM1 + as.numeric(Semester) + Age1stround + SATMath + SATVerbal + SATWriting + STAI_SELF_Total + BDI_SELF_Total + Parental_SES + Cluster_SEM1 * as.numeric(Semester) + Group_transition1 * as.numeric(Semester) + (1 | BARCS_ID), data = data.file.long)
+
+#summary(model.paper.pt.lmer, correction = "Sidak")
+
+
+model.paper.pt.lm <- lm(GPA ~ 1 + Fager4_binary + FH_binary + Sex + Cluster_SEM1 + as.numeric(Semester) + Age1stround + SATMath + SATVerbal + SATWriting + STAI_SELF_Total + BDI_SELF_Total + Parental_SES + Cluster_SEM1 * as.numeric(Semester) + Group_transition1 * as.numeric(Semester), data = data.file.long)
+#Anova(model.paper.pt.lm, test.statistic = "F")
+
+model.paper.pt.lm2 <- lm(GPA ~ 1 + Fager4_binary + FH_binary + Sex + Cluster_SEM1 + as.numeric(Semester) + Age1stround + SATMath + SATVerbal + SATWriting + STAI_SELF_Total + BDI_SELF_Total + Parental_SES + Cluster_SEM1 * as.numeric(Semester) + Group_transition1 * as.numeric(Semester), data = data.file.long)
+#Anova(model.paper.pt.lm, test.statistic = "F")
+
+model.paper.pt.nlme <- lme(GPA ~ 1 + Fager4_binary + FH_binary + Sex + Cluster_current + Cluster_SEM1 + Semester + Age1stround + SATMath + SATVerbal + SATWriting + STAI_SELF_Total + BDI_SELF_Total + Parental_SES + Cluster_SEM1 * Semester + Group_transition1 * Semester, random = ~ 1 | BARCS_ID, na.action = na.omit, data = data.file.long)
+#summary(model.paper.pt.nlme)
+
+```
+
+
+
+
+```{r Anova tests and the like}
+Anova(model.paper.pt.lmer, type = "II", test.statistic = "F", correction = "Sidak")
+Anova(model.paper.pt.lmer, type = "II", test.statistic = "Chisq", correction = "Sidak")
+Anova(model.paper.pt.lmer2, type = "II", test.statistic = "F", correction = "Sidak")
+Anova(model.paper.pt.lmer2, type = "II", test.statistic = "Chisq", correction = "Sidak")
+
+
+Anova(model.paper.pt.lm, type = "II", test.statistic = "F", correction = "Sidak")
+Anova(model.paper.pt.lm2, type = "II", test.statistic = "F", correction = "Sidak")
+
+
+```
+
+
+```{r obsolete code}
+full.model.nlme <- lme(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES + Sex*Cluster_current + Semester*Cluster_current + Sex*Semester + Semester, data = data.file.long, random = ~ 1 | BARCS_ID, na.action = na.omit )
+summary(full.model.nlme)
+
+full.model.nlme.reduced.interactions <- lme(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES + Semester*Cluster_current + Semester, data = data.file.long, random = ~ 1 | BARCS_ID, na.action = na.omit )
+```
