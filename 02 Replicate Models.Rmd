@@ -22,18 +22,38 @@ data.file.long <- data.file.long %>% mutate(Semester = as.factor(Semester),
 ```{r "paper the three models"}
 
 full.model.lmer <- lmer(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES + Sex*Cluster_current + Semester*Cluster_current + Sex*Semester + Semester + (1 | BARCS_ID), data = data.file.long, na.action = na.exclude) 
-#summary(full.model.lmer)
-
 
 full.model.lmer.reduced.interactions <- lmer(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  + Semester*Cluster_current + Semester + (1 | BARCS_ID),data = data.file.long, na.action = na.exclude)
-#summary(full.model.lmer.reduced.interactions)
-
-fmlri.cov.matrix <- vcovHC(full.model.lmer.reduced.interactions)
-coeftest(full.model.lmer.reduced.interactions, vcov = fmlri.cov.matrix)
 
 small.model.lmer <- lmer(GPA ~ Cluster_current * Semester + (1| BARCS_ID), data = data.file.long, REML = FALSE)
-sml.cov.matrix()
 
+pseudo.trajectory.lmer <- lmer(GPA ~ 1 + Fager4_binary + FH_binary + Sex + Cluster_SEM1 + Semester + Age1stround + SATMath + SATVerbal + SATWriting + STAI_SELF_Total + BDI_SELF_Total + Parental_SES + Cluster_SEM1 * Semester + Group_transition1 * Semester + (1 | BARCS_ID), data = data.file.long)
+
+```
+
+```{r "function for plots", echo = FALSE}
+plot.fun <- function(model, UnabhVar) {
+  ls <- list(plot(model),
+    qqmath(model),
+    dotplot(ranef(model)),
+    plot(effect(UnabhVar, model))
+  )
+}
+
+```
+
+```{r plots}
+plot.fun(full.model.lmer, "Cluster_current*Semester")
+plot.fun(full.model.lmer.reduced.interactions, "Cluster_current*Semester")
+plot.fun(small.model.lmer, "Cluster_current*Semester")
+plot.fun(pseudo.trajectory.lmer, "Group_transition1")
+```
+```{r "covariates Sex and Smoking"}
+plot(effect("Sex", full.model.lmer, robust= "hc3", correction = "Sidak"), main = "full model")
+plot(effect("Fager4_binary", full.model.lmer, robust= "hc3", correction = "Sidak"), main = "full model")
+
+plot(effect("Sex", full.model.lmer.reduced.interactions, robust= "hc3", correction = "Sidak"), main = "full model reduced Interactions")
+plot(effect("Fager4_binary", full.model.lmer.reduced.interactions, robust= "hc3", correction = "Sidak"), main = "full model reduced Interactions")
 ```
 
 
