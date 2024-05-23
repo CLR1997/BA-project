@@ -2,7 +2,9 @@
 title: "01 Descriptive"
 author: "Colin Linke"
 date: "2024-05-08"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -10,7 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
-```{r "loading data", echo=false}
+```{r "loading data", echo=FALSE}
 source("Code Transformations.R")
 ```
 
@@ -39,7 +41,7 @@ The following plots show the the composition of the three different cluster give
 ```{r "page 5 replication"}
 data.file.long <- data.file.long %>% mutate(Cluster_current = as.factor(Cluster_current),
                                   BARCS_ID = as.factor(BARCS_ID))
-cluster.colors <- c('1' = "blue", '2' = "green", '3' = "red")
+cluster.colors <- c('1st.cluster' = "blue", '2nd.cluster' = "green", '3rd.cluster' = "red")
 cluster.title <- "Cluster"
 plot.page5 <- ggplot(data.file.long, 
                      aes(x = LOG_Avg_MJ_current, y = LOG_Avg_Drinks_current, col = Cluster_current)) + 
@@ -74,7 +76,7 @@ plot.page5.nottransformed.focused <- ggplot(data.file.long,
   labs(colour = "cluster") +
   ggtitle("Showing the Separation") +
   scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +
-  facet_wrap(~ Semester)
+  facet_wrap(~ as.factor(Semester))
   
 suppressWarnings(print(plot.page5.nottransformed.focused)) 
 #cowplot::plot_grid(plot.page5, plot.page5.nottransformed, nrow = 2) ##just not good

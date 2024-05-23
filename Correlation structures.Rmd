@@ -1,0 +1,116 @@
+---
+title: "lme with different Correlation structures"
+author: "Colin Linke"
+date: "2024-05-22"
+output: html_document
+---
+
+```{r import data, echo = FALSE}
+source("Code Transformations.R")
+data.file.long <- data.file.long %>% mutate( Time = Semester,
+                         Semester = as.factor(Semester),
+                         Group_transition = as.factor(Group_transition),
+                         Group_transition1 = as.factor(Group_transition1),
+                         transition_current = as.factor(transition_current))
+```
+
+
+mirroring the Lme4 models but this time using nlme
+```{r}
+library(nlme)
+
+fmri.nlme.AR1 <- lme(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  + Semester*Cluster_current + Semester,
+                     random = ~ 1 | BARCS_ID, correlation = corAR1(form = ~ Time| BARCS_ID), 
+                     data = data.file.long, na.action = na.exclude )
+
+fmri.nlme.Unstructured <- lme(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  + Semester*Cluster_current + Semester,
+                       random = ~ 1 | BARCS_ID, correlation = corSymm(form = ~ Time| BARCS_ID), 
+                     data = data.file.long, na.action = na.exclude )
+
+fmri.nlme.CompSymm <- lme(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  + Semester*Cluster_current + Semester,
+                       random = ~ 1 | BARCS_ID, correlation = corCompSymm(form = ~ Time| BARCS_ID), 
+                     data = data.file.long, na.action = na.exclude )
+
+fmri.nlme.Toelpitz <- lme(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  + Semester*Cluster_current + Semester,
+                       random = ~ 1 | BARCS_ID, correlation = corExp(form = ~ Time| BARCS_ID, nugget = TRUE), 
+                     data = data.file.long, na.action = na.exclude )
+
+fmri.nlme.Exponential <- lme(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  + Semester*Cluster_current + Semester,
+                       random = ~ 1 | BARCS_ID, correlation = corExp(form = ~ Time| BARCS_ID), 
+                     data = data.file.long, na.action = na.exclude )
+
+fmri.nlme.gaussian <- lme(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  + Semester*Cluster_current + Semester,
+                       random = ~ 1 | BARCS_ID, correlation = corGaus(form = ~ Time| BARCS_ID), 
+                     data = data.file.long, na.action = na.exclude )
+
+fmri.nlme.ARMA11 <- lme(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  + Semester*Cluster_current + Semester,
+                       random = ~ 1 | BARCS_ID, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID), 
+                     data = data.file.long, na.action = na.exclude  )
+
+fmri.nlme.ARMA12 <- lme(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  + Semester*Cluster_current + Semester,
+                       random = ~ 1 | BARCS_ID, correlation = corARMA(p = 1, q = 2, form = ~ Time| BARCS_ID), 
+                     data = data.file.long, na.action = na.exclude  )
+
+fmri.nlme.ARMA21 <- lme(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  + Semester*Cluster_current + Semester,
+                       random = ~ 1 | BARCS_ID, correlation = corARMA(p = 2, q = 1, form = ~ Time| BARCS_ID), 
+                     data = data.file.long, na.action = na.exclude  )
+
+fmri.nlme.ARMA22 <- lme(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  + Semester*Cluster_current + Semester,
+                       random = ~ 1 | BARCS_ID, correlation = corARMA(p = 2, q = 2, form = ~ Time| BARCS_ID), 
+                     data = data.file.long, na.action = na.exclude  )
+
+AIC_values <- AIC(fmri.nlme.AR1, fmri.nlme.Unstructured, fmri.nlme.CompSymm, fmri.nlme.Toelpitz, fmri.nlme.Exponential, fmri.nlme.gaussian, fmri.nlme.ARMA11,fmri.nlme.ARMA12, fmri.nlme.ARMA21, fmri.nlme.ARMA22)
+BIC_values <- BIC(fmri.nlme.AR1, fmri.nlme.Unstructured, fmri.nlme.CompSymm, fmri.nlme.Toelpitz, fmri.nlme.Exponential, fmri.nlme.gaussian, fmri.nlme.ARMA11, fmri.nlme.ARMA12, fmri.nlme.ARMA21, fmri.nlme.ARMA22)
+df_scores_Cor <- data.frame(AIC_values, BIC_values)
+df_scores_Cor
+```
+Choose the Unstructured Covariance Variance Structure because it has almost the same AIC score, but has 30 df rather than 26 or 25. Furthermore, the AR1 or Toelpitz structure are slightly favored by the BIC
+
+```{r entirely estimated}
+fmri.nlme.entirelyestimated <- lme(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  + Semester*Cluster_current + Semester,
+                     random = ~ 1 | BARCS_ID, correlation = corSymm(form = ~ Time| BARCS_ID), 
+                     weights = varIdent(form = ~ 1 | BARCS_ID), 
+                     data = data.file.long, na.action = na.exclude, control = list(opt = "optim", msMaxIter = 200))
+AIC(fmri.nlme.entirelyestimated)
+```
+
+
+
+```{r plots residuals}
+plot(fmri.nlme.AR1)
+plot(fmri.nlme.Unstructured)
+plot(fmri.nlme.CompSymm)
+plot(fmri.nlme.Toelpitz)
+plot(fmri.nlme.Exponential) 
+plot(fmri.nlme.gaussian)
+plot(fmri.nlme.ARMA11)
+plot(fmri.nlme.ARMA12)
+plot(fmri.nlme.ARMA21)
+plot(fmri.nlme.ARMA22)
+
+```
+
+
+```{r}
+summary(fmri.nlme.ARMA11)
+summary(fmri.nlme.Toelpitz)
+AIC(fmri.nlme.ARMA11) < AIC(fmri.nlme.Toelpitz)
+```
+
+```{r}
+pt.lme.ARMA11 <- lme(GPA ~ 1 + Fager4_binary + FH_binary + Sex + Cluster_SEM1 + Semester + Age1stround + SATMath + SATVerbal + SATWriting + STAI_SELF_Total + BDI_SELF_Total + Parental_SES + Cluster_SEM1 * Semester + Group_transition1 * Semester, random = ~ 1 | BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+
+summary(pt.lme.ARMA11, robust= "hc3", correction = "Sidak")
+plot(pt.lme.ARMA11)
+Anova(pt.lme.ARMA11, test.statistic = "F", correction = "Sidak", type = "II")
+anova_results <- anova(pt.lme.ARMA11, type = "marginal")
+p_values <- anova_results$`p-value`
+sidak_correction <- function(p_values, n_tests) {
+  1 - (1 - p_values) ^ n_tests
+}
+anova_results
+round(sidak_correction(p_values, length(p_values) ), 5)
+
+```
+
+
