@@ -1,0 +1,324 @@
+```{r import data, echo = FALSE}
+source("Code Transformations.R")
+data.file.long <- data.file.long %>% mutate( Time = Semester,
+                         Semester = as.factor(Semester),
+                         Group_transition = as.factor(Group_transition),
+                         Group_transition1 = as.factor(Group_transition1),
+                         transition_current = as.factor(transition_current))
+```
+
+
+
+
+
+
+```{r robustness check 1 small model}
+sm.nlme.robust1.1 <- lme(GPA ~ Avg_Drinks_current * Semester + Avg_Drinks_current * Avg_MJ_current + Avg_MJ_current * Semester, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude)
+
+sm.nlme.robust1.2 <- lme(GPA ~ Avg_Drinks_current * Semester + Avg_Drinks_current * Avg_MJ_current + Avg_MJ_current * Semester, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+
+sm.nlme.robust1.3 <- lme(GPA ~ Avg_Drinks_current * Semester + Avg_Drinks_current * Avg_MJ_current + Avg_MJ_current * Semester, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corExp(form = ~ Time| BARCS_ID, nugget = TRUE))
+
+sm.nlme.ARMA11 <- lme(GPA ~ Cluster_current * Semester, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+
+sm.nlme.robust1.noSemester <- lme(GPA ~ Avg_Drinks_current * Avg_MJ_current, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+
+sm.nlme.robust1.noSemester.time <- lme(GPA ~ Avg_Drinks_current * Avg_MJ_current + Avg_Drinks_current*Time + Avg_MJ_current*Time, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+
+sm.nlme.robust1.timeRE <- lme(std_GPA ~ Avg_Drinks_current * Avg_MJ_current + Avg_Drinks_current*Time + Avg_MJ_current*Time, random = ~ 1 + Time| BARCS_ID, data = data.file.long, na.action = na.exclude)
+
+plot(sm.nlme.robust1.1)
+plot(sm.nlme.robust1.2)
+plot(sm.nlme.robust1.3)
+plot(sm.nlme.ARMA11)
+plot(sm.nlme.robust1.noSemester)
+plot(sm.nlme.robust1.noSemester.time)
+plot(sm.nlme.robust1.timeRE)
+
+
+summary(sm.nlme.robust1.1)
+summary(sm.nlme.robust1.2)
+summary(sm.nlme.robust1.3)
+summary(sm.nlme.ARMA11)
+summary(sm.nlme.robust1.noSemester)
+summary(sm.nlme.robust1.noSemester.time)
+summary(sm.nlme.robust1.timeRE)
+
+
+AIC_values.sm.r1 <- AIC(sm.nlme.robust1.1, sm.nlme.robust1.2, sm.nlme.robust1.3, sm.nlme.ARMA11, sm.nlme.robust1.noSemester, sm.nlme.robust1.noSemester.time, sm.nlme.robust1.timeRE)
+
+BIC_values.sm.r1 <- BIC(sm.nlme.robust1.1, sm.nlme.robust1.2, sm.nlme.robust1.3, sm.nlme.ARMA11, sm.nlme.robust1.noSemester, sm.nlme.robust1.noSemester.time, sm.nlme.robust1.timeRE)
+
+df_scores_sm.r1 <- data.frame(AIC_values.sm.r1, BIC_values.sm.r1)
+df_scores_sm.r1
+```
+
+
+
+```{r bigger model robust check 1}
+
+fmri.nlme.robust1.1 <- lme(GPA ~ 1 + Avg_Drinks_current*Avg_MJ_current + Avg_MJ_current*Semester + Avg_Drinks_current*Semester + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  ,
+                       random = ~ 1 | BARCS_ID, 
+                     data = data.file.long, na.action = na.exclude)
+
+fmri.nlme.robust1.2 <- lme(GPA ~ 1 + Avg_Drinks_current*Avg_MJ_current + Avg_MJ_current*Semester + Avg_Drinks_current*Semester + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  ,
+                       random = ~ 1 | BARCS_ID, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID), 
+                     data = data.file.long, na.action = na.exclude)
+
+fmri.nlme.robust1.3 <- lme(GPA ~ 1 + Avg_Drinks_current*Avg_MJ_current + Avg_MJ_current*Semester + Avg_Drinks_current*Semester + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  ,
+                       random = ~ 1 | BARCS_ID, correlation = corExp(form = ~ Time| BARCS_ID, nugget = TRUE), 
+                     data = data.file.long, na.action = na.exclude)
+
+
+fmri.nlme.ARMA11 <- lme(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  + Semester*Cluster_current + Semester,
+                       random = ~ 1 | BARCS_ID, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID), 
+                     data = data.file.long, na.action = na.exclude)
+
+fmri.nlme.robust1.noSemester <- lme(GPA ~ Avg_Drinks_current * Avg_MJ_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+
+
+##no convergence
+# fmri.nlme.robust1.noSemester.time <- lme(GPA ~ Avg_Drinks_current * Avg_MJ_current + Avg_Drinks_current*Time + Avg_MJ_current*Time + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  , random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+
+fmri.nlme.robust1.timeRE <- lme(std_GPA ~ Avg_Drinks_current * Avg_MJ_current + Avg_Drinks_current*Time + Avg_MJ_current*Time + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  , random = ~ 1 + Time| BARCS_ID, data = data.file.long, na.action = na.exclude)
+
+
+plot(fmri.nlme.robust1.1)
+plot(fmri.nlme.robust1.2)
+plot(fmri.nlme.robust1.3)
+plot(fmri.nlme.ARMA11)
+plot(fmri.nlme.robust1.noSemester)
+#plot(fmri.nlme.robust1.noSemester.time)
+plot(fmri.nlme.robust1.timeRE)
+
+
+summary(fmri.nlme.robust1.1)
+summary(fmri.nlme.robust1.2)
+summary(fmri.nlme.robust1.3)
+summary(fmri.nlme.ARMA11)
+summary(fmri.nlme.robust1.noSemester)
+#summary(fmri.nlme.robust1.noSemester.time)
+summary(fmri.nlme.robust1.timeRE)
+
+
+AIC_values.fmri.r1 <- AIC(fmri.nlme.robust1.1, fmri.nlme.robust1.2, fmri.nlme.robust1.3, fmri.nlme.ARMA11, fmri.nlme.robust1.noSemester, fmri.nlme.robust1.timeRE)
+BIC_values.fmri.r1 <- BIC(fmri.nlme.robust1.1, fmri.nlme.robust1.2, fmri.nlme.robust1.3, fmri.nlme.ARMA11, fmri.nlme.robust1.noSemester, fmri.nlme.robust1.timeRE)
+df_scores_fmri.r1 <- data.frame(AIC_values.fmri.r1, BIC_values.fmri.r1)
+df_scores_fmri.r1
+
+```
+
+
+```{r SM.R1 with log}
+sm.nlme.log.robust1.1 <- lme(GPA ~ LOG_Avg_Drinks_current * Semester + LOG_Avg_Drinks_current * LOG_Avg_MJ_current + LOG_Avg_MJ_current * Semester, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude)
+
+sm.nlme.log.robust1.2 <- lme(GPA ~ LOG_Avg_Drinks_current * Semester + LOG_Avg_Drinks_current * LOG_Avg_MJ_current + LOG_Avg_MJ_current * Semester, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+
+# sm.nlme.log.robust1.3 <- lme(GPA ~ LOG_Avg_Drinks_current * Semester + LOG_Avg_Drinks_current * LOG_Avg_MJ_current + LOG_Avg_MJ_current * Semester, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corExp(form = ~ Time| BARCS_ID, nugget = TRUE))
+
+sm.nlme.log.robust1.noSemester <- lme(GPA ~ LOG_Avg_Drinks_current * Time + LOG_Avg_Drinks_current * LOG_Avg_MJ_current + LOG_Avg_MJ_current * Time, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude)
+
+#no convergence
+# sm.nlme.log.robust1.Time <- lme(GPA ~ LOG_Avg_Drinks_current * Time + LOG_Avg_Drinks_current * LOG_Avg_MJ_current + LOG_Avg_MJ_current * Time, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+
+sm.nlme.log.robust1.TimeRE <- lme(GPA ~ LOG_Avg_Drinks_current * Time + LOG_Avg_Drinks_current * LOG_Avg_MJ_current + LOG_Avg_MJ_current * Time, random = ~ 1 + Time| BARCS_ID, data = data.file.long, na.action = na.exclude)
+
+plot(sm.nlme.log.robust1.1)
+plot(sm.nlme.log.robust1.2)
+#plot(sm.nlme.log.robust1.3)
+plot(sm.nlme.ARMA11)
+plot(sm.nlme.log.robust1.noSemester)
+#plot(sm.nlme.log.robust1.Time)
+plot(sm.nlme.log.robust1.TimeRE)
+
+
+
+summary(sm.nlme.log.robust1.1)
+summary(sm.nlme.log.robust1.2)
+#summary(sm.nlme.log.robust1.3)
+summary(sm.nlme.ARMA11)
+summary(sm.nlme.log.robust1.noSemester)
+#summary(sm.nlme.log.robust1.Time)
+summary(sm.nlme.log.robust1.TimeRE)
+
+
+AIC_values.sm.log.r1 <- AIC(sm.nlme.log.robust1.1, sm.nlme.log.robust1.2, sm.nlme.ARMA11, sm.nlme.log.robust1.noSemester, sm.nlme.log.robust1.TimeRE)
+BIC_values.sm.log.r1 <- BIC(sm.nlme.log.robust1.1, sm.nlme.log.robust1.2, sm.nlme.ARMA11, sm.nlme.log.robust1.noSemester, sm.nlme.log.robust1.TimeRE)
+df_scores_sm.log.r1 <- data.frame(AIC_values.sm.log.r1, BIC_values.sm.log.r1)
+df_scores_sm.log.r1
+```
+
+
+```{r bigger model r1 with log}
+
+fmri.nlme.log.robust1.1 <- lme(GPA ~ 1 + LOG_Avg_Drinks_current*Semester + LOG_Avg_Drinks_current*LOG_Avg_MJ_current + LOG_Avg_MJ_current*Semester +  Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  ,
+                       random = ~ 1 | BARCS_ID, 
+                     data = data.file.long, na.action = na.exclude)
+
+fmri.nlme.log.robust1.2 <- lme(GPA ~ 1 + LOG_Avg_Drinks_current*Semester + LOG_Avg_Drinks_current*LOG_Avg_MJ_current + LOG_Avg_MJ_current*Semester +  Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  ,
+                       random = ~ 1 | BARCS_ID, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID), 
+                     data = data.file.long, na.action = na.exclude)
+
+fmri.nlme.log.robust1.3 <- lme(GPA ~ 1 + LOG_Avg_Drinks_current*Semester + LOG_Avg_Drinks_current*LOG_Avg_MJ_current + LOG_Avg_MJ_current*Semester +  Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  ,
+                       random = ~ 1 | BARCS_ID, correlation = corExp(form = ~ Time| BARCS_ID, nugget = TRUE), 
+                     data = data.file.long, na.action = na.exclude)
+
+
+plot(fmri.nlme.log.robust1.1)
+plot(fmri.nlme.log.robust1.2)
+plot(fmri.nlme.log.robust1.3)
+plot(fmri.nlme.ARMA11)
+
+
+summary(fmri.nlme.log.robust1.1)
+summary(fmri.nlme.log.robust1.2)
+summary(fmri.nlme.log.robust1.3)
+summary(fmri.nlme.ARMA11)
+
+
+AIC_values.fmri.log.r1 <- AIC(fmri.nlme.log.robust1.1, fmri.nlme.log.robust1.2, fmri.nlme.log.robust1.3, fmri.nlme.ARMA11)
+BIC_values.fmri.log.r1 <- BIC(fmri.nlme.log.robust1.1, fmri.nlme.log.robust1.2, fmri.nlme.log.robust1.3, fmri.nlme.ARMA11)
+df_scores_fmri.log.r1 <- data.frame(AIC_values.fmri.log.r1, BIC_values.fmri.log.r1)
+df_scores_fmri.log.r1
+
+```
+
+
+
+
+
+
+
+```{r standardized Data}
+
+sm.nlme.std.robust2.1 <- lme(std_GPA ~ std_Avg_Drinks * Semester + std_Avg_Drinks * std_Avg_MJ + std_Avg_MJ * Semester, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude)
+
+sm.nlme.std.robust2.2 <- lme(std_GPA ~ std_Avg_Drinks * Semester + std_Avg_Drinks * std_Avg_MJ + std_Avg_MJ * Semester, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+
+sm.nlme.std.robust2.3 <- lme(std_GPA ~ std_Avg_Drinks * Semester + std_Avg_Drinks * std_Avg_MJ + std_Avg_MJ * Semester, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corExp(form = ~ Time| BARCS_ID, nugget = TRUE))
+
+sm.nlme.std.ARMA11 <- lme(std_GPA ~ Cluster_current * Semester, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+
+sm.nlme.std.noSemester <- lme(std_GPA ~ std_Avg_Drinks * std_Avg_MJ, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+
+sm.nlme.std.noSemester.time <- lme(std_GPA ~ std_Avg_Drinks * std_Avg_MJ + std_Avg_Drinks*Time + std_Avg_MJ*Time, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+
+sm.nlme.std.noSemester.timeRE <- lme(std_GPA ~ std_Avg_Drinks * std_Avg_MJ + std_Avg_Drinks*Time + std_Avg_MJ*Time, random = ~ 1 + Time| BARCS_ID, data = data.file.long, na.action = na.exclude)
+
+
+
+plot(sm.nlme.std.robust2.1)
+plot(sm.nlme.std.robust2.2)
+plot(sm.nlme.std.robust2.3)
+plot(sm.nlme.std.ARMA11)
+plot(sm.nlme.std.noSemester)
+plot(sm.nlme.std.noSemester.time)
+plot(sm.nlme.std.noSemester.timeRE)
+
+
+summary(sm.nlme.std.robust2.1)
+summary(sm.nlme.std.robust2.2)
+summary(sm.nlme.std.robust2.3)
+summary(sm.nlme.ARMA11)
+
+summary(sm.nlme.std.noSemester) 
+summary(sm.nlme.std.noSemester.time) 
+summary(sm.nlme.std.noSemester.timeRE)
+
+
+AIC_values.sm.std.r2 <- AIC(sm.nlme.std.robust2.1, sm.nlme.std.robust2.2, sm.nlme.std.robust2.3, sm.nlme.ARMA11, sm.nlme.std.noSemester, sm.nlme.std.noSemester.time, sm.nlme.std.noSemester.timeRE)
+BIC_values.sm.std.r2 <- BIC(sm.nlme.std.robust2.1, sm.nlme.std.robust2.2, sm.nlme.std.robust2.3, sm.nlme.ARMA11, sm.nlme.std.noSemester, sm.nlme.std.noSemester.time, sm.nlme.std.noSemester.timeRE)
+df_scores_sm.std.r2 <- data.frame(AIC_values.sm.std.r1, BIC_values.sm.std.r1)
+df_scores_sm.std.r2
+```
+
+```{r standardized Data}
+
+sm.nlme.std.log.robust2.1 <- lme(std_GPA ~ std_LOG_Avg_Drinks * Semester + std_LOG_Avg_Drinks * std_LOG_Avg_MJ + std_LOG_Avg_MJ * Semester, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude)
+
+sm.nlme.std.log.robust2.2 <- lme(std_GPA ~ std_LOG_Avg_Drinks * Semester + std_LOG_Avg_Drinks * std_LOG_Avg_MJ + std_LOG_Avg_MJ * Semester, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+
+sm.nlme.std.log.robust2.3 <- lme(std_GPA ~ std_LOG_Avg_Drinks * Semester + std_LOG_Avg_Drinks * std_LOG_Avg_MJ + std_LOG_Avg_MJ * Semester, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corExp(form = ~ Time| BARCS_ID, nugget = TRUE))
+
+sm.nlme.std.log.ARMA11.2 <- lme(std_GPA ~ Cluster_current * Semester, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+
+sm.nlme.std.log.noSemester<- lme(std_GPA ~ std_LOG_Avg_Drinks * std_LOG_Avg_MJ, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+
+sm.nlme.std.log.noSemester.time <- lme(std_GPA ~ std_LOG_Avg_Drinks * std_LOG_Avg_MJ + std_LOG_Avg_Drinks*Time + std_LOG_Avg_MJ*Time, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+
+sm.nlme.std.log.noSemester.timeRE <- lme(std_GPA ~ std_LOG_Avg_Drinks * std_LOG_Avg_MJ + std_LOG_Avg_Drinks*Time + std_LOG_Avg_MJ*Time, random = ~ 1 + Time| BARCS_ID, data = data.file.long, na.action = na.exclude)
+
+
+
+plot(sm.nlme.std.log.robust2.1)
+plot(sm.nlme.std.log.robust2.2)
+plot(sm.nlme.std.log.robust2.3)
+plot(sm.nlme.std.ARMA11)
+plot(sm.nlme.std.log.noSemester)
+plot(sm.nlme.std.log.noSemester.time)
+plot(sm.nlme.std.log.noSemester.timeRE)
+
+
+summary(sm.nlme.std.log.robust2.1)
+summary(sm.nlme.std.log.robust2.2)
+summary(sm.nlme.std.log.robust2.3)
+summary(sm.nlme.ARMA11)
+
+summary(sm.nlme.std.log.noSemester) 
+summary(sm.nlme.std.log.noSemester.time) 
+summary(sm.nlme.std.log.noSemester.timeRE)
+
+
+AIC_values.sm.std.log.r2 <- AIC(sm.nlme.std.log.robust2.1, sm.nlme.std.log.robust2.2, sm.nlme.std.log.robust2.3, sm.nlme.ARMA11, sm.nlme.std.log.noSemester, sm.nlme.std.log.noSemester.time, sm.nlme.std.log.noSemester.timeRE)
+BIC_values.sm.log.std.r2 <- BIC(sm.nlme.std.log.robust2.1, sm.nlme.std.log.robust2.2, sm.nlme.std.log.robust2.3, sm.nlme.ARMA11, sm.nlme.std.log.noSemester, sm.nlme.std.log.noSemester.time, sm.nlme.std.log.noSemester.timeRE)
+df_scores_sm.std.log.r2 <- data.frame(AIC_values.sm.std.r1, BIC_values.sm.std.r1)
+df_scores_sm.std.log.r2
+```
+
+```{r }
+fmri.nlme.std.robust2.1 <- lme(std_GPA ~ 1 + std_Avg_Drinks*std_Avg_MJ + std_Avg_Drinks*Semester + std_Avg_MJ*Semester  + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES,
+                       random = ~ 1 | BARCS_ID, 
+                     data = data.file.long, na.action = na.exclude)
+
+fmri.nlme.std.robust2.2 <- lme(std_GPA ~ 1 + std_Avg_Drinks*std_Avg_MJ + std_Avg_Drinks*Semester + std_Avg_MJ*Semester  + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES,
+                       random = ~ 1 | BARCS_ID, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID), 
+                     data = data.file.long, na.action = na.exclude)
+
+fmri.nlme.std.robust2.3 <- lme(std_GPA ~ 1 + std_Avg_Drinks*std_Avg_MJ + std_Avg_Drinks*Semester + std_Avg_MJ*Semester  + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES,
+                       random = ~ 1 | BARCS_ID, correlation = corExp(form = ~ Time| BARCS_ID, nugget = TRUE), 
+                     data = data.file.long, na.action = na.exclude)
+
+
+fmri.nlme.std.ARMA11 <- lme(std_GPA ~ Cluster_current * Semester  + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+
+fmri.nlme.std.noSemester <- lme(std_GPA ~ std_Avg_Drinks * std_Avg_MJ + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+
+fmri.nlme.std.noSemester.time <- lme(std_GPA ~ std_Avg_Drinks * std_Avg_MJ + std_Avg_Drinks*Time + std_Avg_MJ*Time + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+
+fmri.nlme.std.noSemester.timeRE <- lme(std_GPA ~ std_Avg_Drinks * std_Avg_MJ + std_Avg_Drinks*Time + std_Avg_MJ*Time + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES, random = ~ 1 + Time| BARCS_ID, data = data.file.long, na.action = na.exclude)
+
+
+
+plot(fmri.nlme.std.robust2.1)
+plot(fmri.nlme.std.robust2.2)
+plot(fmri.nlme.std.robust2.3)
+plot(fmri.nlme.std.ARMA11)
+plot(fmri.nlme.std.noSemester)
+plot(fmri.nlme.std.noSemester.time)
+plot(fmri.nlme.std.noSemester.timeRE)
+
+
+summary(fmri.nlme.std.robust2.1)
+summary(fmri.nlme.std.robust2.2)
+summary(fmri.nlme.std.robust2.3)
+summary(fmri.nlme.std.ARMA11)
+summary(fmri.nlme.std.noSemester)
+summary(fmri.nlme.std.noSemester.time)
+summary(fmri.nlme.std.noSemester.timeRE)
+
+
+AIC_values.fmri.std.r2 <- AIC(fmri.nlme.std.robust2.1, fmri.nlme.std.robust2.2, fmri.nlme.std.robust2.3, fmri.nlme.std.ARMA11, fmri.nlme.std.noSemester, fmri.nlme.std.noSemester.time, fmri.nlme.std.noSemester.timeRE)
+BIC_values.fmri.std.r2  <- BIC(fmri.nlme.std.robust2.1, fmri.nlme.std.robust2.2, fmri.nlme.std.robust2.3, fmri.nlme.std.ARMA11, fmri.nlme.std.noSemester, fmri.nlme.std.noSemester.time, fmri.nlme.std.noSemester.timeRE)
+df_scores_fmri.std.r2 <- data.frame(AIC_values.fmri.std.r2, BIC_values.fmri.std.r2)
+df_scores_fmri.std.r2
+```

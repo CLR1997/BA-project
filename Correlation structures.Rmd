@@ -67,11 +67,11 @@ df_scores_Cor
 Choose the Unstructured Covariance Variance Structure because it has almost the same AIC score, but has 30 df rather than 26 or 25. Furthermore, the AR1 or Toelpitz structure are slightly favored by the BIC
 
 ```{r entirely estimated}
-fmri.nlme.entirelyestimated <- lme(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  + Semester*Cluster_current + Semester,
-                     random = ~ 1 | BARCS_ID, correlation = corSymm(form = ~ Time| BARCS_ID), 
-                     weights = varIdent(form = ~ 1 | BARCS_ID), 
-                     data = data.file.long, na.action = na.exclude, control = list(opt = "optim", msMaxIter = 200))
-AIC(fmri.nlme.entirelyestimated)
+# fmri.nlme.entirelyestimated <- lme(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  + Semester*Cluster_current + Semester,
+#                      random = ~ 1 | BARCS_ID, correlation = corSymm(form = ~ Time| BARCS_ID), 
+#                      weights = varIdent(form = ~ 1 | BARCS_ID), 
+#                      data = data.file.long, na.action = na.exclude, control = list(opt = "optim", msMaxIter = 200))
+# AIC(fmri.nlme.entirelyestimated)
 ```
 
 
@@ -90,7 +90,7 @@ plot(fmri.nlme.ARMA22)
 
 ```
 
-
+The model being specified with the Toelpitz or ARMA11 variance covariance structure are basically identically. the ARMA 1,1 structure is chosen, due to it having a sligthly smaller AIC. The reason they are so similar is probably due to the fact that their structure are somewhat similar and that under certain conditions, such as a flat optimization plane would lead to identical estimates.
 ```{r}
 summary(fmri.nlme.ARMA11)
 summary(fmri.nlme.Toelpitz)
@@ -112,5 +112,80 @@ anova_results
 round(sidak_correction(p_values, length(p_values) ), 5)
 
 ```
+
+```{r}
+
+residuals <- resid(fmri.nlme.ARMA11, type ="normalized")
+weigths_seconditeration <- 1/abs(residuals)
+weights_2ndstructure <- varFixed(~weigths_seconditeration)
+
+
+fmri.nlme.ARMA11.weigthed <- lme(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  + Semester*Cluster_current + Semester,
+                       random = ~ 1 | BARCS_ID, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID), 
+                     data = data.file.long, na.action = na.exclude, weights = weights_2ndstructure, 
+                     control = list(msMaxIter = 2000))
+plot(fmri.nlme.ARMA11.weigthed)
+summary(fmri.nlme.ARMA11.weigthed)
+```
+
+
+```{r}
+sm.nlme.ARMA11 <- lme(GPA ~ Cluster_current * Semester, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+summary(sm.nlme.ARMA11)
+anova(sm.nlme.ARMA11, type = "marginal")
+plot(sm.nlme.ARMA11)
+
+
+residuals.sm <- resid(sm.nlme.ARMA11, type ="normalized")
+weigths_seconditeration.sm.1 <- 1/(residuals.sm)^2
+weigths_seconditeration.sm.2 <- 1/abs(residuals.sm)
+weigths_seconditeration.sm.3 <- 1/(residuals.sm)^4
+
+weights_2ndstructure.sm1 <- varFixed(~weigths_seconditeration.sm.1)
+weights_2ndstructure.sm2 <- varFixed(~weigths_seconditeration.sm.2)
+weights_2ndstructure.sm3 <- varFixed(~weigths_seconditeration.sm.3)
+
+sm.nlme.ARMA11.w1 <- lme(GPA ~ Cluster_current * Semester, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, weights = weights_2ndstructure.sm1,   correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+sm.nlme.ARMA11.w2 <- lme(GPA ~ Cluster_current * Semester, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, weights = weights_2ndstructure.sm2, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+sm.nlme.ARMA11.w3 <- lme(GPA ~ Cluster_current * Semester, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, weights = weights_2ndstructure.sm3,   correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+
+plot(sm.nlme.ARMA11.w1)
+plot(sm.nlme.ARMA11.w2)
+plot(sm.nlme.ARMA11.w3)
+
+summary(sm.nlme.ARMA11.w1)
+summary(sm.nlme.ARMA11.w2)
+summary(sm.nlme.ARMA11.w3)
+
+```
+
+
+```{r}
+plot(fmri.nlme.ARMA11)
+#qqmath(fmri.nlme.ARMA11)
+
+# qqnorm(unlist(ranef(fmri.nlme.ARMA11)$BARCS_ID))
+# qqline(unlist(ranef(fmri.nlme.ARMA11)$BARCS_ID), col = "red")
+
+plot(effect("Cluster_current*Semester", fmri.nlme.ARMA11, robust= "hc3", correction = "Sidak"))
+
+df.fmlriARMA <- broom::augment_columns(data = data.file.long, x = fmri.nlme.ARMA11, newdata = data.file.long)
+fmlriARMA.fitted.observed <- ggplot(df.fmlriARMA, aes(y = GPA, x=.fitted))  +
+  geom_point( alpha = .1) + ggtitle("full model") +xlim(0,4.5) + ylim(0, 4.5)
+fmlriARMA.fitted.observed
+fmlriARMA.fitted.observed <- fmlriARMA.fitted.observed + geom_abline(data = df.fmlriARMA, formula = GPA ~ .fitted, alpha= 0.4, color ="red")
+
+fmlriARMA.fitted.observed
+fmlriARMA.fitted.observed + facet_wrap(~Semester)
+
+plot(fmri.nlme.ARMA11, resid(., type="p") ~ fitted(.), main = "Residuals vs Fitted", abline = 0)
+
+
+hist(residuals(fmri.nlme.ARMA11), main = "Histogram of Residuals", xlab = "Residuals")
+plot(data.file.long$GPA, residuals(fmri.nlme.ARMA11), xlab = "GPA", ylab = "Residuals", main = "Residuals vs GPA")
+abline( ~ residuals(fmri.nlme.ARMA11),col = "red")
+```
+
+
 
 
