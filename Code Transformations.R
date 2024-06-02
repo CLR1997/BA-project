@@ -14,6 +14,7 @@ library(sjPlot)
 library(lmerTest)
 library(sandwich)
 library(pbkrtest)
+library(imputeTS)
 data.file <- read.sav("BARCS_Data_used_for_paper.sav")
 data.sem1 <- data.file %>% filter(Semester == 1)
 data.sem2 <- data.file %>% filter(Semester == 2)
@@ -143,7 +144,23 @@ subset.2nagpas <- data.file.long %>% filter(sum.GPAna == 2) %>% arrange(average_
 subset.3nagpas <- data.file.long %>% filter(sum.GPAna == 3) %>% arrange(average_GPA)
 
 
+data.file.long <- data.file.long %>% mutate( Time = Semester,
+                                             Semester = as.factor(Semester),
+                                             Group_transition = as.factor(Group_transition),
+                                             Group_transition1 = as.factor(Group_transition1),
+                                             transition_current = as.factor(transition_current))
 
+
+
+imputed_values <- data.file.long %>% group_by(BARCS_ID) %>% filter(sum.GPAna <= 2) %>%
+  mutate(GPA_lin.imp = if_else(sum.GPAna <= 2, GPA,na_interpolation(GPA, option = "linear")),
+         GPA_ma.imp = if_else(sum.GPAna <= 2, GPA, na_ma(GPA, k = 1)))
+
+
+
+imputed_values <- imputed_values %>% group_by(Semester) %>%
+      mutate(std_GPA_lin.imp = mean(GPA_lin.imp, na.rm = TRUE) / sd(GPA_lin.imp, na.rm = TRUE),
+             std_GPA_ma.imp = mean(GPA_ma.imp, na.rm = TRUE) / sd(GPA_ma.imp, na.rm = TRUE))
 
 
 
