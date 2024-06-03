@@ -597,7 +597,7 @@ plot.mjgpa <- ggplot(subset(subset(data.file.long, !is.na(Cluster_SEM1)) , sum.G
 
 plot.log.mjgpa.diff <- ggplot(subset(subset(data.file.long, !is.na(Cluster_SEM1)) , sum.GPAna != 4), aes(x = diff_LOG_Avg_MJ_current, y = diff_GPA, colour = Cluster_current)) +
   geom_point(alpha = 0.3) + geom_smooth()  +
-  ylim(0, 4.5) + ylab("GPA change from previous Semester") +
+  ylim(-3, 3) + ylab("GPA change from previous Semester") +
   xlab("Change in MJ consumption per Month from previous Semester (log10 transformed)") +
   labs(colour = "current Cluster") +
   ggtitle("Log10 change in MJ consumption & GPA given original Cluster specification") + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +
@@ -605,7 +605,7 @@ plot.log.mjgpa.diff <- ggplot(subset(subset(data.file.long, !is.na(Cluster_SEM1)
 
 plot.mjgpa.diff <- ggplot(subset(subset(data.file.long, !is.na(Cluster_SEM1)) , sum.GPAna != 4), aes(x = diff_Avg_MJ_current, y = diff_GPA, colour = Cluster_current)) +
   geom_point(alpha = 0.5) + geom_smooth()  +
-  ylim(0, 4.5)  + ylab("GPA change from previous Semester") +
+  ylim(-3, 3)  + ylab("GPA change from previous Semester") +
   xlab("Change in MJ consumption per Month from previous Semester (not transformed)") +
   labs(colour = "current Cluster") +
   ggtitle("Change in MJ consumption & GPA given original Cluster specification") + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +
@@ -613,7 +613,7 @@ plot.mjgpa.diff <- ggplot(subset(subset(data.file.long, !is.na(Cluster_SEM1)) , 
 
 plot.log.mjgpa.mean <- ggplot(subset(subset(data.file.long, !is.na(Cluster_SEM1)) , sum.GPAna != 4), aes(x = mean_LOG_Avg_MJ, y = diff_GPA, colour = Cluster_current)) +
   geom_point(alpha = 0.3) + geom_smooth()  +
-  ylim(0, 4.5) + ylab("GPA in the given Semester mean adjusted") +
+  ylim(-3, 3) + ylab("GPA in the given Semester mean adjusted") +
   xlab("MJ consumption per Month mean adjusted (log10 transformed)") +
   labs(colour = "current Cluster") +
   ggtitle("Log10 mean adjusted MJ consumption & GPA given original Cluster specification") + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +
@@ -622,7 +622,7 @@ plot.log.mjgpa.mean <- ggplot(subset(subset(data.file.long, !is.na(Cluster_SEM1)
 
 plot.mjgpa.mean <- ggplot(subset(subset(data.file.long, !is.na(Cluster_SEM1)) , sum.GPAna != 4), aes(x = mean_Avg_MJ, y = diff_GPA, colour = Cluster_current)) +
   geom_point(alpha = 0.5) + geom_smooth()  +
-  ylim(0, 4.5)  + ylab("GPA in the given Semester mean adjusted") +
+  ylim(-3, 3)  + ylab("GPA in the given Semester mean adjusted") +
   xlab("MJ consumption per Month mean adjusted (not transformed)") +
   labs(colour = "current Cluster") +
   ggtitle("mean adjusted MJ consumption & GPA given original Cluster specification") + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +
@@ -630,7 +630,7 @@ plot.mjgpa.mean <- ggplot(subset(subset(data.file.long, !is.na(Cluster_SEM1)) , 
 
 plot.log.mjgpa.std <- ggplot(subset(subset(data.file.long, !is.na(Cluster_SEM1)) , sum.GPAna != 4), aes(x = std_LOG_Avg_MJ, y = diff_GPA, colour = Cluster_current)) +
   geom_point(alpha = 0.3) + geom_smooth()  +
-  ylim(0, 4.5) + ylab("GPA in the given Semester mean adjusted") +
+  ylim(-3, 3) + ylab("GPA in the given Semester mean adjusted") +
   xlab("MJ consumption per Month std adjusted (log10 transformed)") +
   labs(colour = "current Cluster") +
   ggtitle("Log10 std adjusted MJ consumption & GPA given original Cluster specification") + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +
@@ -639,7 +639,7 @@ plot.log.mjgpa.std <- ggplot(subset(subset(data.file.long, !is.na(Cluster_SEM1))
 
 plot.mjgpa.std <- ggplot(subset(subset(data.file.long, !is.na(Cluster_SEM1)) , sum.GPAna != 4), aes(x = std_Avg_MJ, y = diff_GPA, colour = Cluster_current)) +
   geom_point(alpha = 0.5) + geom_smooth()  +
-  ylim(0, 4.5)  + ylab("GPA in the given Semester std adjusted") +
+  ylim(-3, 3)  + ylab("GPA in the given Semester std adjusted") +
   xlab("MJ consumption per Monthstd adjusted (not transformed)") +
   labs(colour = "current Cluster") +
   ggtitle("std adjusted Alcohol consumption & GPA given original Cluster specification") + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +

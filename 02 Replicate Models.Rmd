@@ -31,7 +31,7 @@ small.model.lmer <- lmer(GPA ~ Cluster_current * Semester + (1| BARCS_ID), data 
 pseudo.trajectory.lmer <- lmer(GPA ~ 1 + Fager4_binary + FH_binary + Sex + Cluster_SEM1 + Semester + Age1stround + SATMath + SATVerbal + SATWriting + STAI_SELF_Total + BDI_SELF_Total + Parental_SES + Cluster_SEM1 * Semester + Group_transition1 * Semester + (1 | BARCS_ID), data = data.file.long, REML = TRUE, na.action = na.exclude)
 
 
-fm.slope.lmer <- lmer(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES + Sex*Cluster_current + Time*Cluster_current + Sex*Time + Time + (1 + Time| BARCS_ID), data = data.file.long, na.action = na.exclude, REML = FALSE) 
+fm.slope.lmer <- lmer(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES + Sex*Cluster_current + Time*Cluster_current + Sex*Time + Time + (1 | BARCS_ID), data = data.file.long, na.action = na.exclude, REML = FALSE) 
 ```
 
 ```{r summaries}
