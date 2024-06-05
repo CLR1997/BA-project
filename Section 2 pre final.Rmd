@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
-```{r}
+```{r, echo = FALSE}
 source("Code Transformations.R")
 ```
 
@@ -205,31 +205,6 @@ plot(effect("Cluster_current*Time", time.slope.ARMA11, robust= "hc3", correction
 ```
 
 
-```{r showing the effect of Cluster membership, echo=FALSE}
-fm.effect <- as.data.frame(effect("Semester*Cluster_current", full.model.ARMA11, robust= "hc3", correction = "Sidak"))
-sm.effect <- as.data.frame(effect("Cluster_current*Semester", small.model.ARMA11, robust= "hc3", correction = "Sidak"))
-time.effect <- as.data.frame(effect("Cluster_current*Time", time.slope.ARMA11, robust= "hc3", correction = "Sidak"))
-
-fm.effect$model <- "Full Model"
-sm.effect$model <- "Small Model"
-time.effect$model <- "Time Slope"
-time.effect$Time <- as.factor(time.effect$Time)
-colnames(time.effect)[2] <- "Semester"
-
-
-combined <- bind_rows(fm.effect, sm.effect)
-colnames(combined)[2] <- "Semester / Time"
-
-ggplot(combined, aes(x = Cluster_current, y = fit, color = model, group = model)) +
-  geom_point() +
-  #geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2) +
-  facet_wrap(~ 'Semester / Time') +
-  labs(title = "Effect of Predictor1 and Predictor2 in Two Models",
-       x = "Predictor 1",
-       y = "Fitted Value") +
-  theme_minimal()
-```
-
 
 ```{r Cluster Transition plot recreation}
 plot(effect("Group_transition1", pseudo.trajectory.ARMA11, robust= "hc3", correction = "Sidak"))
@@ -240,3 +215,130 @@ plot(effect("Sex", full.model.ARMA11, robust= "hc3", correction = "Sidak"), main
 plot(effect("Fager4_binary", full.model.ARMA11, robust= "hc3", correction = "Sidak"), main = "Effect of Smoking")
 ```
 
+```{r assesment FM residuals}
+plot(fitted(full.model.ARMA11), resid(full.model.ARMA11), 
+     xlab = "Fitted Values", 
+     ylab = "Residuals",
+     main = "Residuals vs Fitted Plot")
+abline(h = 0, col = "red")
+qqPlot(resid(full.model.ARMA11), 
+       main = "Normal Q-Q Plot of Residuals")
+
+sqrt_abs_resid <- sqrt(abs(resid(full.model.ARMA11)))
+plot(fitted(full.model.ARMA11), sqrt_abs_resid, 
+     xlab = "Fitted Values", 
+     ylab = "Square Root of |Residuals|",
+     main = "Scale-Location Plot")
+
+hist(resid(full.model.ARMA11), 
+     main = "Histogram of Residuals", 
+     xlab = "Residuals", 
+     breaks = 10, 
+     col = "gray")
+
+plot(ranef(full.model.ARMA11), 
+       main = "Random Intercept")
+dim(ranef(full.model.ARMA11))
+print(range(ranef(full.model.ARMA11)))
+print(r.squaredGLMM(full.model.ARMA11)) ####TERRRIBLE!!!!!!!!!!!!
+```
+
+```{r assesment SM residuals}
+plot(fitted(small.model.ARMA11), resid(small.model.ARMA11), 
+     xlab = "Fitted Values", 
+     ylab = "Residuals",
+     main = "Residuals vs Fitted Plot")
+abline(h = 0, col = "red")
+qqPlot(resid(small.model.ARMA11), 
+       main = "Normal Q-Q Plot of Residuals")
+
+sqrt_abs_resid <- sqrt(abs(resid(small.model.ARMA11)))
+plot(fitted(small.model.ARMA11), sqrt_abs_resid, 
+     xlab = "Fitted Values", 
+     ylab = "Square Root of |Residuals|",
+     main = "Scale-Location Plot")
+
+hist(resid(small.model.ARMA11), 
+     main = "Histogram of Residuals", 
+     xlab = "Residuals", 
+     breaks = 10, 
+     col = "gray")
+
+
+
+plot(ranef(small.model.ARMA11), 
+       main = "Random Intercept")
+print(dim(ranef(small.model.ARMA11)))
+print(range(ranef(small.model.ARMA11)))
+print(r.squaredGLMM(small.model.ARMA11)) ####TERRRIBLE!!!!!!!!!!!!
+```
+
+```{r assesment PT residuals}
+plot(fitted(pseudo.trajectory.ARMA11), resid(pseudo.trajectory.ARMA11), 
+     xlab = "Fitted Values", 
+     ylab = "Residuals",
+     main = "Residuals vs Fitted Plot")
+abline(h = 0, col = "red")
+qqPlot(resid(pseudo.trajectory.ARMA11), 
+       main = "Normal Q-Q Plot of Residuals")
+
+sqrt_abs_resid <- sqrt(abs(resid(pseudo.trajectory.ARMA11)))
+plot(fitted(pseudo.trajectory.ARMA11), sqrt_abs_resid, 
+     xlab = "Fitted Values", 
+     ylab = "Square Root of |Residuals|",
+     main = "Scale-Location Plot")
+
+hist(resid(pseudo.trajectory.ARMA11), 
+     main = "Histogram of Residuals", 
+     xlab = "Residuals", 
+     breaks = 10, 
+     col = "gray")
+
+plot(ranef(pseudo.trajectory.ARMA11), 
+       main = "Random Intercept")
+dim(ranef(pseudo.trajectory.ARMA11))
+print(range(ranef(pseudo.trajectory.ARMA11)))
+print(r.squaredGLMM(pseudo.trajectory.ARMA11)) ### somewhat better
+```
+the pseudo trajectory is doing a lot better here.
+
+
+
+```{r test RE / pooling model}
+full.model.gls <- gls(GPA ~ 1 + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  + Semester * Cluster_current, data = data.file.long, na.action = na.exclude, method = "REML", correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+anova(full.model.gls, full.model.ARMA11)
+
+small.model.gls <- gls(GPA ~ Semester * Cluster_current, data = data.file.long, na.action = na.exclude, method = "REML", correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+anova(small.model.ARMA11, small.model.gls)
+
+pseudo.trajectory.gls <- gls(GPA ~ 1 + Fager4_binary + FH_binary + Sex + Cluster_SEM1 + Semester + Age1stround + SATMath + SATVerbal + SATWriting + STAI_SELF_Total + BDI_SELF_Total + Parental_SES + Cluster_SEM1 * Semester + Group_transition1 * Semester, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+anova(pseudo.trajectory.ARMA11, pseudo.trajectory.gls)
+```
+RIP lol. PT isn't as clear probably due to the fact that the Random effects actually do something 
+
+```{r Multicollinearity}
+vif(full.model.gls)
+vif(pseudo.trajectory.gls)
+```
+Semester + Interaction have high / very high multicollinearity, the other fixed effects seem okay.
+For the pt, the Semester and Cluster categorization in Semester are highly multicollinear, as well as the group transition variable having a high collinear value. This makes of course sense as they are related.
+
+
+```{r further tests}
+
+(ACF.pt <- ACF(pseudo.trajectory.ARMA11, maxLag=4))
+plot(ACF.pt, alpha=0.01) 
+
+#stat.ethz.ch/R-manual/R-devel/library/nlme/html/ACF.lme.html
+```
+expected. There is an ARMA(1,1) Cov structure in the model assumption, a lag of 1 should be showcassed here and it is.
+
+
+
+```{r Normality / Homoscedasticity}
+shapiro.test(resid(full.model.ARMA11))
+shapiro.test(resid(small.model.ARMA11))
+shapiro.test(resid(pseudo.trajectory.ARMA11))
+shapiro.test(resid(time.slope.ARMA11)) ## additional tests are somewhat trivial
+```
+strong evidence that the data is not normally distributed 

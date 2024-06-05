@@ -1,0 +1,310 @@
+---
+title: "Robustness Checks"
+author: "Colin Linke"
+date: "2024-06-03"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r, echo = FALSE}
+source("Code Transformations.R")
+```
+
+Does including Substance usage as additional Covariates show a similar story? is there a significant difference 
+
+There is the option of using standardized transformed and / or logarithmic transformed for the variables. In the following I opted for using the standardized Data, but avoiding an additional logarithmic transformation of the substance use data due to the fact that all models performed almost identically, though with a logarithmic transformation slightly better, but this would lead to a less intuitive interpretation. Furthermore, due to a flat optimization plane and different scales the two substance usage variables lie on, the standadisation of these variables alleviates these problems somewhat.
+
+```{r "standardized Data SM"}
+
+sm.nlme.std.robust2.1 <- lme(std_GPA ~ std_Avg_Drinks * Semester + std_Avg_Drinks * std_Avg_MJ + std_Avg_MJ * Semester, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude)
+
+sm.nlme.std.robust2.2 <- lme(std_GPA ~ std_Avg_Drinks * Semester + std_Avg_Drinks * std_Avg_MJ + std_Avg_MJ * Semester, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+
+sm.nlme.std.ARMA11 <- lme(std_GPA ~ Cluster_current * Semester, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+
+sm.nlme.std.noSemester <- lme(std_GPA ~ std_Avg_Drinks * std_Avg_MJ, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+
+sm.nlme.std.noSemester.time <- lme(std_GPA ~ std_Avg_Drinks * std_Avg_MJ + std_Avg_Drinks*Time + std_Avg_MJ*Time, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+
+sm.nlme.std.noSemester.timeRE <- lme(std_GPA ~ std_Avg_Drinks * std_Avg_MJ + std_Avg_Drinks*Time + std_Avg_MJ*Time, random = ~ 1 + Time| BARCS_ID, data = data.file.long, na.action = na.exclude)
+
+
+cowplot::plot_grid(plot(sm.nlme.std.robust2.1), plot(sm.nlme.std.robust2.2), plot(sm.nlme.std.ARMA11), plot(sm.nlme.std.noSemester), plot(sm.nlme.std.noSemester.time), plot(sm.nlme.std.noSemester.timeRE))
+
+
+summary(sm.nlme.std.robust2.1)
+summary(sm.nlme.std.robust2.2)
+summary(sm.nlme.std.ARMA11)
+summary(sm.nlme.std.noSemester) 
+summary(sm.nlme.std.noSemester.time) 
+summary(sm.nlme.std.noSemester.timeRE)
+
+
+AIC_values.sm.std.r2 <- AIC(sm.nlme.std.robust2.1, sm.nlme.std.robust2.2, sm.nlme.std.ARMA11, sm.nlme.std.noSemester, sm.nlme.std.noSemester.time, sm.nlme.std.noSemester.timeRE)
+BIC_values.sm.std.r2 <- BIC(sm.nlme.std.robust2.1, sm.nlme.std.robust2.2, sm.nlme.std.ARMA11, sm.nlme.std.noSemester, sm.nlme.std.noSemester.time, sm.nlme.std.noSemester.timeRE)
+df_scores_sm.std.r2 <- data.frame(AIC_values.sm.std.r2, BIC_values.sm.std.r2)
+df_scores_sm.std.r2
+```
+no time / Semester > Time > Semester. Semester Pretty bad
+
+
+```{r }
+fmri.nlme.std.robust2.1 <- lme(std_GPA ~ 1 + std_Avg_Drinks*std_Avg_MJ + std_Avg_Drinks*Semester + std_Avg_MJ*Semester  + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES, method = "ML",
+                       random = ~ 1 | BARCS_ID, 
+                     data = data.file.long, na.action = na.exclude)
+
+fmri.nlme.std.robust2.2 <- lme(std_GPA ~ 1 + std_Avg_Drinks*std_Avg_MJ + std_Avg_Drinks*Semester + std_Avg_MJ*Semester  + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES, method = "ML",
+                       random = ~ 1 | BARCS_ID, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID), 
+                     data = data.file.long, na.action = na.exclude)
+
+
+fmri.nlme.std.ARMA11 <- lme(std_GPA ~ Cluster_current * Semester  + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES, method = "ML",
+                         random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+
+fmri.nlme.std.noSemester <- lme(std_GPA ~ std_Avg_Drinks * std_Avg_MJ + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES, method = "ML",
+                         random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+
+fmri.nlme.std.noSemester.time <- lme(std_GPA ~ std_Avg_Drinks * std_Avg_MJ + std_Avg_Drinks*Time + std_Avg_MJ*Time + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES, method = "ML",
+                         random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+
+fmri.nlme.std.noSemester.timeRE <- lme(std_GPA ~ std_Avg_Drinks * std_Avg_MJ + std_Avg_Drinks*Time + std_Avg_MJ*Time + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES, method = "ML",
+                         random = ~ 1 + Time| BARCS_ID, data = data.file.long, na.action = na.exclude)
+
+
+
+cowplot::plot_grid(plot(fmri.nlme.std.robust2.1), plot(fmri.nlme.std.robust2.2), plot(fmri.nlme.std.ARMA11), plot(fmri.nlme.std.noSemester), plot(fmri.nlme.std.noSemester.time), plot(fmri.nlme.std.noSemester.timeRE))
+
+
+AIC_values.fmri.std.r2 <- AIC(fmri.nlme.std.robust2.1, fmri.nlme.std.robust2.2, fmri.nlme.std.ARMA11, fmri.nlme.std.noSemester, fmri.nlme.std.noSemester.time, fmri.nlme.std.noSemester.timeRE)
+BIC_values.fmri.std.r2  <- BIC(fmri.nlme.std.robust2.1, fmri.nlme.std.robust2.2, fmri.nlme.std.ARMA11, fmri.nlme.std.noSemester, fmri.nlme.std.noSemester.time, fmri.nlme.std.noSemester.timeRE)
+df_scores_fmri.std.r2 <- data.frame(AIC_values.fmri.std.r2, BIC_values.fmri.std.r2)
+df_scores_fmri.std.r2
+```
+no time / Semester > Time > Semester. Semester Pretty bad.
+
+```{R outlier removed}
+
+sm.outlier.barebones <- lme(std_GPA ~ std_Avg_Drinks + std_Avg_MJ, random = ~ 1| BARCS_ID, data = outlier.removed, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID), method = "ML")
+
+sm.outlier<- lme(std_GPA ~ std_Avg_Drinks * std_Avg_MJ, random = ~ 1| BARCS_ID, data = outlier.removed, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID), method = "ML")
+
+sm.outlier.semester <- lme(std_GPA ~ std_Avg_Drinks * Semester + std_Avg_Drinks * std_Avg_MJ + std_Avg_MJ * Semester, random = ~ 1| BARCS_ID, data = outlier.removed, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID), method = "ML")
+
+fm.outlier.barebones <- lme(std_GPA ~ std_Avg_Drinks + std_Avg_MJ + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES, random = ~ 1| BARCS_ID, data = outlier.removed, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID), method = "ML")
+
+fm.outlier<- lme(std_GPA ~ std_Avg_Drinks * std_Avg_MJ + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES, random = ~ 1| BARCS_ID, data = outlier.removed, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID), method = "ML")
+
+fm.outlier.semester <- lme(std_GPA ~ std_Avg_Drinks * Semester + std_Avg_Drinks * std_Avg_MJ + std_Avg_MJ * Semester + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES, random = ~ 1| BARCS_ID, data = outlier.removed, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID), method = "ML")
+
+cowplot::plot_grid(plot(sm.outlier.barebones), plot(sm.outlier), plot(sm.outlier.semester))
+summary(sm.outlier.barebones)
+summary(sm.outlier)
+summary(sm.outlier.semester)
+cowplot::plot_grid(plot(fm.outlier.barebones), plot(fm.outlier), plot(fm.outlier.semester))
+summary(sm.outlier.barebones)
+summary(sm.outlier)
+summary(sm.outlier.semester)
+
+AIC_sm.outlier <- AIC(sm.outlier.barebones, sm.outlier, sm.outlier.semester, fm.outlier.barebones, fm.outlier, fm.outlier.semester)
+BIC_sm.outlier <- BIC(sm.outlier.barebones, sm.outlier, sm.outlier.semester, fm.outlier.barebones, fm.outlier, fm.outlier.semester)
+df.sm.out <- data.frame(AIC_sm.outlier, BIC_sm.outlier)
+df.sm.out
+
+## probably useful to just make a table with the relevant coefficient values of the models 
+```
+
+```{r tests}
+Anova(sm.outlier, white.adjust = "hc3", correction = "Sidak")
+anova(sm.outlier, sm.outlier.barebones)
+
+Anova(sm.outlier.semester, white.adjust = "hc3", correction = "Sidak")
+anova(sm.outlier.semester, sm.outlier.barebones)
+anova(sm.outlier, sm.outlier.semester)
+
+
+Anova(fm.outlier, white.adjust = "hc3", correction = "Sidak")
+anova(fm.outlier, fm.outlier.barebones)
+
+Anova(fm.outlier.semester, white.adjust = "hc3", correction = "Sidak")
+anova(fm.outlier.semester, fm.outlier.barebones)
+anova(fm.outlier, fm.outlier.semester)
+```
+inclusion of the Interaction Effect leads to an stronger negative coefficients of the substance use parameters, but the interaction is always positive and not statistically significant. Models perform slightly better with the interaction effect, but the LRT test still rejects the inclusion for a pvalue =.05 
+
+
+```{R difference in the RE?}
+plot(ranef(fm.outlier), 
+       main = "Random Intercept")
+dim(ranef(fm.outlier))
+print(range(ranef(fm.outlier)))
+print(r.squaredGLMM(fm.outlier))
+```
+of course not.
+
+Residuals:
+
+```{r}
+plot(fitted(fm.outlier), resid(fm.outlier), 
+     xlab = "Fitted Values", 
+     ylab = "Residuals",
+     main = "Residuals vs Fitted Plot")
+abline(h = 0, col = "red")
+qqPlot(resid(fm.outlier), 
+       main = "Normal Q-Q Plot of Residuals")
+
+sqrt_abs_resid <- sqrt(abs(resid(fm.outlier)))
+plot(fitted(fm.outlier), sqrt_abs_resid, 
+     xlab = "Fitted Values", 
+     ylab = "Square Root of |Residuals|",
+     main = "Scale-Location Plot")
+
+hist(resid(fm.outlier), 
+     main = "Histogram of Residuals", 
+     xlab = "Residuals", 
+     breaks = 10, 
+     col = "gray")
+```
+
+
+The introduction of the covariates might help with the Random Effects.
+
+```{r}
+sm.outlier.barebones <- lme(std_GPA ~ std_Avg_Drinks + std_Avg_MJ, random = ~ 1| BARCS_ID, data = outlier.removed, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID), method = "REML")
+
+sm.outlier.barebones.2 <- lme(std_GPA ~ std_Avg_Drinks + std_Avg_MJ, random = ~ 1 + std_Avg_Drinks + std_Avg_MJ| BARCS_ID, data = outlier.removed, na.action = na.exclude, method = "REML", control = list(maxIter = 1000, tolerance = 1e-2, opt = "optim"))
+
+#sm.outlier.barebones.3 <- lme(std_GPA ~ std_Avg_Drinks + std_Avg_MJ, random = ~ 1 + std_Avg_Drinks + std_Avg_MJ| BARCS_ID, data = outlier.removed, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID), method = "REML", control = list(maxIter = 1000, tolerance = 1e-2, opt = "optim")) CANNOT be estimated, due to the coefficient matrix not being invertible 
+
+anova(sm.outlier.barebones, sm.outlier.barebones.2)
+plot(sm.outlier.barebones.2)
+
+sm.outlier.barebones <- lme(std_GPA ~ std_Avg_Drinks + std_Avg_MJ, random = ~ 1| BARCS_ID, data = outlier.removed, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID), method = "ML")
+
+sm.outlier.barebones.2 <- lme(std_GPA ~ std_Avg_Drinks + std_Avg_MJ, random = ~ 1 + std_Avg_Drinks + std_Avg_MJ| BARCS_ID, data = outlier.removed, na.action = na.exclude, method = "ML", control = list(maxIter = 1000, tolerance = 1e-2, opt = "optim"))
+
+AIC(sm.outlier.barebones, sm.outlier.barebones.2)
+
+plot(resid(sm.outlier.barebones))
+qqnorm(resid(sm.outlier.barebones))
+qqline(resid(sm.outlier.barebones))
+
+plot(resid(sm.outlier.barebones.2))
+qqnorm(resid(sm.outlier.barebones.2))
+qqline(resid(sm.outlier.barebones.2))
+```
+This is problematic, they aren't really nested.
+
+
+
+
+```{r}
+#diff.robust <- lme(diff_GPA ~ diff_Avg_Drinks_current * diff_Avg_MJ_current * I(Time -1) +factor(BARCS_ID), random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, method = "REML") ## makes no sense to include a Random Intercept for a within estimator. 
+
+diff.robust.2<- lme(diff_GPA ~ diff_Avg_Drinks_current * diff_Avg_MJ_current * I(Time -1), random = ~ 1| BARCS_ID,  data = data.file.long, na.action = na.exclude, method = "ML")
+
+diff.robust.3 <- lm(diff_GPA ~ diff_Avg_Drinks_current * diff_Avg_MJ_current * I(Time -1) +factor(BARCS_ID), data = data.file.long, na.action = na.exclude)
+
+diff.robust.4<- lme(diff_GPA ~ diff_Avg_Drinks_current * diff_Avg_MJ_current, random = ~ 0 + diff_Avg_Drinks_current * diff_Avg_MJ_current| BARCS_ID,  data = data.file.long, na.action = na.exclude, method = "ML")
+
+diff.robust.5<- lme(diff_GPA ~ diff_Avg_Drinks_current + diff_Avg_MJ_current, random = ~ 0 + diff_Avg_Drinks_current * diff_Avg_MJ_current| BARCS_ID,  data = data.file.long, na.action = na.exclude, method = "ML", control = list(maxIter = 1000, tolerance = 1e-9, opt = "optim"))
+
+diff.robust.6<- lme(diff_GPA ~ diff_Avg_MJ_current, random = ~ 1 + diff_Avg_MJ_current| BARCS_ID,  data = data.file.long, na.action = na.exclude, method = "ML")
+
+
+diff.robust.7 <- lme(diff_GPA ~ diff_Avg_MJ_current*diff_Avg_Drinks_current - diff_Avg_Drinks_current, random = ~ 1 + diff_Avg_MJ_current| BARCS_ID,  data = data.file.long, na.action = na.exclude, method = "ML")
+
+cowplot::plot_grid(plot(diff.robust.2), plot(diff.robust.3), plot(diff.robust.4), plot(diff.robust.5), plot(diff.robust.6), plot(diff.robust.7))
+summary(diff.robust.2)
+summary(diff.robust.3)
+summary(diff.robust.4)
+summary(diff.robust.5)
+summary(diff.robust.6)
+summary(diff.robust.7)
+
+
+AIC(diff.robust.2, diff.robust.3, diff.robust.4, diff.robust.5, diff.robust.6, diff.robust.7)
+
+c(range(ranef(diff.robust.2)), range(ranef(diff.robust.4)), range(ranef(diff.robust.5)), range(ranef(diff.robust.6)), range(ranef(diff.robust.7)))
+c(r.squaredGLMM(diff.robust.2),r.squaredGLMM(diff.robust.4), r.squaredGLMM(diff.robust.5), r.squaredGLMM(diff.robust.6), r.squaredGLMM(diff.robust.7))
+```
+this is a dead end.
+
+
+Perhaps the students vary too much among themselves too much. Taking a look when the student data is averaged over all 4 Semester
+
+```{r}
+sm.avgd <- lme(GPA ~ Avg_Drinks_current*Avg_MJ_current, data = average.data, random = ~1 |BARCS_ID)
+plot(sm.avgd)
+summary(sm.avgd)
+r.squaredGLMM(sm.avgd)
+
+sm.avgd.2 <- lme(GPA ~ Avg_Drinks_current*Avg_MJ_current, data = (average.data %>% filter(Avg_Drinks_current <=120)), random = ~1 |BARCS_ID)
+plot(sm.avgd.2)
+summary(sm.avgd.2)
+r.squaredGLMM(sm.avgd.2)
+
+sm.avgd.3 <- lme(GPA ~ 0 + Avg_Drinks_current*Avg_MJ_current, data = average.data, random = ~ 1 |BARCS_ID)
+plot(sm.avgd.3)
+summary(sm.avgd.3)
+r.squaredGLMM(sm.avgd.3)
+
+sm.avgd.4 <- lme(GPA ~ 0 + Avg_Drinks_current*Avg_MJ_current, data = (average.data %>% filter(Avg_Drinks_current <=120)), random = ~ 1 |BARCS_ID)
+plot(sm.avgd.4)
+summary(sm.avgd.4)
+r.squaredGLMM(sm.avgd.4)
+
+sm.avgd.5 <- lme(GPA ~ I(Avg_Drinks_current^2) + I(Avg_MJ_current^2), data = average.data, random = ~1 |BARCS_ID)
+plot(sm.avgd.5)
+summary(sm.avgd.5)
+r.squaredGLMM(sm.avgd.5)
+
+fm.avgd <- lme(GPA ~ Avg_Drinks_current*Avg_MJ_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES + sum.GPAna,  data = average.data, random = ~1 |BARCS_ID, na.action = na.exclude)
+plot(fm.avgd)
+summary(fm.avgd)
+r.squaredGLMM(fm.avgd)
+
+fm.avgd2 <- lme(GPA ~ Avg_Drinks_current*Avg_MJ_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES + sum.GPAna,  data = (average.data %>% filter(Avg_Drinks_current <=120)), random = ~1 |BARCS_ID, na.action = na.exclude)
+plot(fm.avgd2)
+summary(fm.avgd2)
+r.squaredGLMM(fm.avgd2)
+
+fm.avgd3 <- lme(GPA ~ 0 + Avg_Drinks_current*Avg_MJ_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES + sum.GPAna,  data = average.data, random = ~1 |BARCS_ID, na.action = na.exclude)
+plot(fm.avgd3)
+summary(fm.avgd3)
+r.squaredGLMM(fm.avgd3)
+
+fm.avgd4 <- lme(GPA ~ 0 + Avg_Drinks_current*Avg_MJ_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES + sum.GPAna,  data = average.data, random = ~1 |BARCS_ID, na.action = na.exclude)
+plot(fm.avgd4)
+summary(fm.avgd4)
+r.squaredGLMM(fm.avgd4)
+
+fm.avgd.Cluster <- lme(GPA ~ Avg_Drinks_current*Avg_MJ_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES + sum.GPAna + Cluster_SEM1,  data = average.data, random = ~1 |BARCS_ID, na.action = na.exclude)
+plot(fm.avgd.Cluster)
+summary(fm.avgd.Cluster)
+r.squaredGLMM(fm.avgd.Cluster)
+
+
+Cluster.avgd <- lme(GPA ~ Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES + sum.GPAna + Cluster_SEM1,  data = average.data, random = ~1 |BARCS_ID, na.action = na.exclude)
+
+plot(Cluster.avgd)
+summary(Cluster.avgd)
+r.squaredGLMM(Cluster.avgd)
+
+
+noSub.avgd <- lme(GPA ~ Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES + sum.GPAna,  data = average.data, random = ~1 |BARCS_ID, na.action = na.exclude)
+
+plot(noSub.avgd)
+summary(noSub.avgd)
+r.squaredGLMM(noSub.avgd)
+
+anova(noSub.avgd, fm.avgd)
+noSub.avgd <- lme(GPA ~ Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES + sum.GPAna,  data = (average.data %>% filter(!is.na(Cluster_SEM1) )), random = ~1 |BARCS_ID, na.action = na.exclude)
+
+anova(noSub.avgd, Cluster.avgd)
+
+```
+
+There is clearly a confounding effect at play here from variable(s) that were not observed in the study. The inference from the models therefor has to be taken with scepticism as the parameters may be biased and it is unclear to what extend and in which direction they were biased. 
+
+The LRT at least leads to the inclusion of Substance usage data, but again, the model assumptions are violated and confounded.

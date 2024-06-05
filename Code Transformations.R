@@ -15,6 +15,8 @@ library(lmerTest)
 library(clubSandwich)
 library(pbkrtest)
 library(imputeTS)
+library(MuMIn)
+library(gamlss)
 data.file <- read.sav("BARCS_Data_used_for_paper.sav")
 data.sem1 <- data.file %>% filter(Semester == 1)
 data.sem2 <- data.file %>% filter(Semester == 2)
@@ -163,9 +165,45 @@ imputed_values <- imputed_values %>% group_by(Semester) %>%
              std_GPA_ma.imp = mean(GPA_ma.imp, na.rm = TRUE) / sd(GPA_ma.imp, na.rm = TRUE))
 
 
+# data.file.long <- data.file.long %>% group_by(Semester) %>%
+#   mutate(diff_GPA = mean(diff_GPA, na.rm = TRUE) / sd(diff_GPA, na.rm = TRUE),
+#          diff_Avg_Drinks_current = mean(diff_Avg_Drinks_current, na.rm = TRUE) / sd(diff_Avg_Drinks_current, na.rm = TRUE),
+#          diff_Avg_MJ_current = mean(diff_Avg_MJ_current, na.rm = TRUE) / sd(diff_Avg_MJ_current, na.rm = TRUE) )
+
+
+outlier.removed <- data.file.long %>% filter(Avg_Drinks_current <= 150)
+
+## small model outlier
+
+outlier.removed <- outlier.removed %>%
+  group_by(Semester) %>%
+  mutate(mean_Avg_Drinks = Avg_Drinks_current - mean(Avg_Drinks_current),
+         std_Avg_Drinks = mean_Avg_Drinks / sd(Avg_Drinks_current),
+         mean_LOG_Avg_Drinks = LOG_Avg_Drinks_current - mean(LOG_Avg_Drinks_current),
+         std_LOG_Avg_Drinks = mean_LOG_Avg_Drinks / sd(LOG_Avg_Drinks_current),
+         mean_Avg_MJ = Avg_MJ_current - mean(Avg_MJ_current, na.rm = TRUE),
+         std_Avg_MJ = mean_Avg_MJ / sd(Avg_MJ_current, na.rm = TRUE),
+         mean_LOG_Avg_MJ = LOG_Avg_MJ_current - mean(LOG_Avg_MJ_current, na.rm = TRUE),
+         std_LOG_Avg_MJ = mean_LOG_Avg_MJ / sd(LOG_Avg_MJ_current, na.rm = TRUE),
+         mean_GPA = GPA - mean(GPA, na.rm = TRUE),
+         std_GPA = mean_GPA / sd(GPA, na.rm = TRUE) )
+
+
+average.data <- data.file.long %>% ungroup() %>% filter(sum.GPAna != 4) %>% 
+  select(BARCS_ID, GPA, Avg_Drinks_current, Avg_MJ_current, sum.GPAna, Age1stround, SATTotal, SATMath, SATVerbal, 
+         SATWriting, Fager4_binary, STAI_SELF_Total, BDI_SELF_Total, FH_binary, Sex, Parental_SES, Cluster_SEM1) 
+
+first_value <- function(x) {
+  x[1]
+}
+average.data <-  average.data %>%
+  group_by(BARCS_ID) %>%
+  summarize(
+    across(where(is.numeric), ~ mean(.x, na.rm = TRUE)),
+    across(where(is.factor), ~ first_value(.x)),
+    across(where(is.character), ~ first_value(.x))
+  )
+
 
 ### Group transition compares only the first semester to the last semester!!!!!!!!!
-
-
-
 

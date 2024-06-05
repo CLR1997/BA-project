@@ -1,14 +1,15 @@
+---
+output:
+  html_document: default
+  pdf_document: default
+---
+
 ```{r import data, echo = FALSE}
 source("Code Transformations.R")
 
 ```
 
-
-
-
-
-
-```{r robustness check 1 small model}
+```{r robustness check 1 small model, echo=FALSE}
 sm.nlme.robust1.1 <- lme(GPA ~ Avg_Drinks_current * Semester + Avg_Drinks_current * Avg_MJ_current + Avg_MJ_current * Semester, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude)
 
 sm.nlme.robust1.2 <- lme(GPA ~ Avg_Drinks_current * Semester + Avg_Drinks_current * Avg_MJ_current + Avg_MJ_current * Semester, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
@@ -24,15 +25,11 @@ sm.nlme.robust1.noSemester.time <- lme(GPA ~ Avg_Drinks_current * Avg_MJ_current
 sm.nlme.robust1.timeRE <- lme(std_GPA ~ Avg_Drinks_current * Avg_MJ_current + Avg_Drinks_current*Time + Avg_MJ_current*Time, random = ~ 1 + Time| BARCS_ID, data = data.file.long, na.action = na.exclude)
 
 sm.nlme.robust1.timeRECOV <- lme(GPA ~ Avg_Drinks_current * Avg_MJ_current, random = ~ 1 + Time| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID), method = "REML", control = list(maxIter = 1000, tolerance = 1e-2, opt = "optim"))
+```
 
-plot(sm.nlme.robust1.1)
-plot(sm.nlme.robust1.2)
-plot(sm.nlme.robust1.3)
-plot(sm.nlme.ARMA11)
-plot(sm.nlme.robust1.noSemester)
-plot(sm.nlme.robust1.noSemester.time)
-plot(sm.nlme.robust1.timeRE)
-plot(sm.nlme.robust1.timeRECOV)
+```{r}
+cowplot::plot_grid(plot(sm.nlme.robust1.1) ,plot(sm.nlme.robust1.2) , plot(sm.nlme.robust1.3) ,plot(sm.nlme.ARMA11))
+cowplot::plot_grid(plot(sm.nlme.robust1.noSemester), plot(sm.nlme.robust1.noSemester.time), plot(sm.nlme.robust1.timeRE), plot(sm.nlme.robust1.timeRECOV))
 
 
 summary(sm.nlme.robust1.1)
@@ -52,8 +49,6 @@ BIC_values.sm.r1 <- BIC(sm.nlme.robust1.1, sm.nlme.robust1.2, sm.nlme.robust1.3,
 df_scores_sm.r1 <- data.frame(AIC_values.sm.r1, BIC_values.sm.r1)
 df_scores_sm.r1
 ```
-
-
 
 ```{r bigger model robust check 1}
 
@@ -108,7 +103,6 @@ df_scores_fmri.r1
 
 ```
 
-
 ```{r SM.R1 with log}
 sm.nlme.log.robust1.1 <- lme(GPA ~ LOG_Avg_Drinks_current * Semester + LOG_Avg_Drinks_current * LOG_Avg_MJ_current + LOG_Avg_MJ_current * Semester, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude)
 
@@ -148,7 +142,6 @@ df_scores_sm.log.r1 <- data.frame(AIC_values.sm.log.r1, BIC_values.sm.log.r1)
 df_scores_sm.log.r1
 ```
 
-
 ```{r bigger model r1 with log}
 
 fmri.nlme.log.robust1.1 <- lme(GPA ~ 1 + LOG_Avg_Drinks_current*Semester + LOG_Avg_Drinks_current*LOG_Avg_MJ_current + LOG_Avg_MJ_current*Semester +  Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  ,
@@ -183,13 +176,7 @@ df_scores_fmri.log.r1
 
 ```
 
-
-
-
-
-
-
-```{r standardized Data}
+```{r "standardized Data SM"}
 
 sm.nlme.std.robust2.1 <- lme(std_GPA ~ std_Avg_Drinks * Semester + std_Avg_Drinks * std_Avg_MJ + std_Avg_MJ * Semester, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude)
 
@@ -219,8 +206,7 @@ plot(sm.nlme.std.noSemester.timeRE)
 summary(sm.nlme.std.robust2.1)
 summary(sm.nlme.std.robust2.2)
 summary(sm.nlme.std.robust2.3)
-summary(sm.nlme.ARMA11)
-
+summary(sm.nlme.std.ARMA11)
 summary(sm.nlme.std.noSemester) 
 summary(sm.nlme.std.noSemester.time) 
 summary(sm.nlme.std.noSemester.timeRE)
@@ -323,7 +309,6 @@ df_scores_fmri.std.r2 <- data.frame(AIC_values.fmri.std.r2, BIC_values.fmri.std.
 df_scores_fmri.std.r2
 ```
 
-
 ```{r }
 fmri.nlme.std.log.robust2.1 <- lme(std_GPA ~ 1 + std_LOG_Avg_Drinks*std_LOG_Avg_MJ + std_LOG_Avg_Drinks*Semester + std_LOG_Avg_MJ*Semester  + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES,
                        random = ~ 1 | BARCS_ID, 
@@ -370,20 +355,12 @@ df_scores_fmri.std.log.r2 <- data.frame(AIC_values.fmri.std.log.r2, BIC_values.f
 df_scores_fmri.std.log.r2
 ```
 
-
 ```{r}
 sm.nlme.robust1.noSemester.2 <- lme(GPA ~ Avg_Drinks_current * Avg_MJ_current + I(Avg_Drinks_current^2) + I(Avg_MJ_current != 0), random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
 
 plot(sm.nlme.robust1.noSemester.2)
 summary(sm.nlme.robust1.noSemester.2)
 ```
-
-
-
-
-
-
-
 
 ```{r}
 outlier.removed <- data.file.long %>% filter(Avg_Drinks_current <= 150)
@@ -488,7 +465,6 @@ plot(sm.outlier.mixed.time)  ###BAD!
 
 ```
 
-
 ```{r fmri}
 
 fmri.outlier.log<- lme(std_GPA ~ std_LOG_Avg_Drinks * std_LOG_Avg_MJ + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES, random = ~ 1| BARCS_ID, data = outlier.removed, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID), method = "ML")
@@ -530,7 +506,6 @@ BIC_fmri.outlier <- BIC(fmri.outlier.log, fmri.outlier, fmri.outlier.semester.lo
 df.fmri.out <- data.frame(AIC_fmri.outlier, BIC_fmri.outlier)
 df.fmri.out
 ```
-
 
 ```{r fmri tests}
 fmri.outlier.mixed <- lme(std_GPA ~ std_Avg_Drinks * std_LOG_Avg_MJ + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES, random = ~ 1| BARCS_ID, data = outlier.removed, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID), method = "ML")
@@ -688,7 +663,6 @@ plot(Afmri.outlier.mixed.timeC4)
 plot(Afmri.outlier.mixed.Semester5)
 ```
 
-
 ```{r comparison models}
 sm.outlier.mixed <- lme(std_GPA ~ std_Avg_Drinks * std_LOG_Avg_MJ, random = ~ 1| BARCS_ID, data = outlier.removed, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID), method = "REML")
 sm.full.mixed <- lme(std_GPA ~ std_Avg_Drinks * std_LOG_Avg_MJ, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID), method = "REML")
@@ -729,7 +703,7 @@ summary(sm.imputed.mixed)
 
 ```
 
-```{r}
+```{r "gamlss"}
 library(gamlss)
 outlier.removed2 <- outlier.removed %>% select(BARCS_ID, GPA, Avg_Drinks_current, Avg_MJ_current, Sex, Time, Semester, Age1stround, SATMath, SATWriting, Fager4_binary, BDI_SELF_Total, FH_binary)
 gamlss1 <- gamlss(formula = GPA ~ pb(Avg_Drinks_current) * pb(Avg_MJ_current) + random(BARCS_ID) + Sex + Time, 
@@ -758,11 +732,13 @@ plot(residuals(gamlss3), fitted(gamlss3),
 
 gamlss4 <- gamlss(formula = GPA ~ pb(Avg_Drinks_current) * pb(Avg_MJ_current) * Time + random(BARCS_ID), 
                   sigma.formula = ~pb(Avg_Drinks_current) * pb(Avg_MJ_current) - pb(Avg_Drinks_current) + Sex + Time + Age1stround + SATMath + SATWriting + Fager4_binary + BDI_SELF_Total + FH_binary,
-                  nu.formula = ~Time * pb(Avg_MJ_current) + SATMath + SATWriting + Sex + Fager4_binary + BDI_SELF_Total + FH_binary ,data = na.omit(outlier.removed2), na.action = na.exclude, family = BCCG)
+                  nu.formula = ~Time * pb(Avg_MJ_current) + SATMath + SATWriting + Sex + Fager4_binary + BDI_SELF_Total + FH_binary ,
+                  tau.formula = ~ Time * pb(Avg_MJ_current) + SATMath + SATWriting + Sex + Fager4_binary + BDI_SELF_Total + FH_binary,
+                  data = na.omit(outlier.removed2), na.action = na.exclude, family = BCCG,  
+                  control = gamlss.control(n.cyc = 40))
 
 summary(gamlss4)
 plot(residuals(gamlss4), fitted(gamlss4),
      xlab = "fitted values", ylab = "Residuals")
 
 ```
-
