@@ -1,0 +1,229 @@
+% This is the LMU Munich LaTeX template, optimized for R Markdown.
+
+% -------------------------------
+% --- PREAMBLE ---
+% -------------------------------
+\documentclass[12pt]{article}
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage[]{graphicx}
+\usepackage[round, comma]{natbib}               % literature reference style
+\usepackage[bf]{caption}
+\usepackage{textcomp}                           % For single quotes
+\usepackage{floatrow}                           % For image and table position
+\usepackage{booktabs}                           % For tables
+% \usepackage[colorlinks=true]{hyperref}
+% \usepackage[bottom]{footmisc}
+\usepackage[bottom, flushmargin]{footmisc}      % For footnotes
+\usepackage[citebordercolor={0 1 0}]{hyperref}  % For creating hyperlinks in cross references
+\usepackage{footnotebackref}
+\usepackage[]{color}
+\usepackage{alltt}
+\usepackage[a4paper, width = 160mm, top = 35mm, bottom = 30mm, bindingoffset = 0mm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage{ragged2e}
+\usepackage{xcolor}
+\definecolor{LMUgreen}{RGB}{0, 136, 58}
+\usepackage{fancyhdr}
+\newcommand{\changefont}{%
+    \fontsize{8}{11}\selectfont
+}
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks = true,
+  linkcolor = gray,
+  urlcolor = gray,
+  citecolor = black}
+
+% save thesis parameters for later
+\newcommand{\mytitle}{$title$}
+\newcommand{\thesistype}{$type$}
+\newcommand{\thesisauthor}{$author$}
+\newcommand{\thesisdate}{$date$}
+
+% -------------------------------
+% --- Env CSLRef ---
+% -------------------------------
+
+\newlength{\cslhangindent}
+\setlength{\cslhangindent}{1.5em}
+\newenvironment{CSLReferences}%
+{\setlength{\parindent}{0pt}%
+\everypar{\setlength{\hangindent}{\cslhangindent}}\ignorespaces}%
+{\par}
+
+% -------------------------------
+% --- PAGE FORMAT ---
+% -------------------------------
+\pagestyle{fancy}
+\fancyhead{}
+\fancyhead[R]{\changefont{$title$}}
+\fancyfoot{}
+\fancyfoot[R]{\thepage}
+\setlength{\headheight}{14.5pt}
+\setlength{\parindent}{0pt}
+\interfootnotelinepenalty = 10000
+% Additional LaTeX parameters added in the YAML header of index.Rmd
+$for(header-includes)$
+  $header-includes$
+$endfor$
+
+% ------------------------------------------------------------------------------
+% MAIN -------------------------------------------------------------------------
+% ------------------------------------------------------------------------------
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\begin{document}
+
+% FRONT PAGE -------------------------------------------------------------------
+
+\begin{titlepage}
+\pagecolor{LMUgreen}
+\begin{center}
+\color{white}
+\LARGE
+$type$
+
+\vspace{0.5cm}
+
+\rule{\textwidth}{1.5pt}
+\LARGE
+\textbf{\mytitle}
+\rule{\textwidth}{1.5pt}
+
+\vspace{0.5cm}
+
+\large
+$chair$ \\
+$university$
+
+\vfill
+
+\Large
+\textbf{$author$}
+
+\vfill
+
+\large
+Munich, $date$
+
+\normalsize
+Submitted in partial fulfillment of the requirements for the degree of B.Sc./M. Sc.
+\\
+
+Supervised by $advisor1$
+
+\end{center}
+\color{black}
+\end{titlepage}
+
+% CONTENTS ---------------------------------------------------------------------
+\pagecolor{white}
+\pagenumbering{Roman}
+\newpage
+
+% ------------------------------------
+% --- frontmatter: Acknowledgement ---
+% ------------------------------------
+$if(acknowledge)$
+\newpage
+$acknowledge$
+$endif$
+\pagestyle{plain}
+\pagenumbering{roman}   % define page number in roman style
+\setcounter{page}{1}    % start page numbering
+
+% -----------------------------
+% --- frontmatter: Abstract ---
+% -----------------------------
+\newpage
+$abstract$
+
+% -----------------------------
+% --- frontmatter: Contents ---
+% -----------------------------
+\newpage
+\tableofcontents
+\clearpage
+
+% ----------------------------------------------------------
+% --- frontmatter: List of Abbreviations (not mandatory) ---
+% ----------------------------------------------------------
+$if(abbreviations)$
+\newpage
+$abbreviations$
+$endif$
+
+% ----------------------------------------------------
+% --- frontmatter: List of Figures (not mandatory) ---
+% ----------------------------------------------------
+$if(lof)$
+\newpage
+\listoffigures
+\addcontentsline{toc}{section}{List of Figures}
+$endif$
+
+% ---------------------------------------------------
+% --- frontmatter: List of Tables (not mandatory) ---
+% ---------------------------------------------------
+$if(lot)$
+\newpage
+\listoftables
+\addcontentsline{toc}{section}{List of Tables}
+$endif$
+
+% -------------------------------
+% --- main body of the thesis ---
+% -------------------------------
+\newpage
+\pagestyle{plain}
+\setcounter{page}{1}    % start page numbering anew
+\pagenumbering{arabic}  % page numbers in arabic style
+
+$body$
+
+% change rmd_files in `_bookdown.yml` files to determine order
+% note that references and appendix are also contained here.
+
+% ------------------------------------------------------------------------------
+% BIBLIOGRAPHY -----------------------------------------------------------------
+% ------------------------------------------------------------------------------
+
+\RaggedRight
+\bibliography{bib/references}
+\bibliographystyle{dcu}
+\newpage
+
+
+% ------------------------------------------------------------------------------
+% DECLARATION OF AUTHORSHIP-----------------------------------------------------
+% ------------------------------------------------------------------------------
+
+\Large
+\noindent
+\textbf{Declaration of authorship}
+\vspace{0.5cm}
+\noindent
+\normalsize
+
+I hereby declare that the report submitted is my own unaided work. All direct
+or indirect sources used are acknowledged as references. I am aware that the
+thesis in digital form can be examined for the use of unauthorized aid and in
+order to determine whether the report as a whole or parts incorporated in it may
+be deemed as plagiarism. For the comparison of my work with existing sources I
+agree that it shall be entered in a database where it shall also remain after
+examination, to enable comparison with future theses submitted. Further rights
+of reproduction and usage, however, are not granted here. This work was not
+previously presented to another examination board and has not been published.
+\\
+
+\vspace{1cm}
+Munich, $date$ \\
+
+\vspace{3cm}
+
+\noindent\rule{0.5\textwidth}{0.4pt} \\
+
+$author$
+
+% ------------------------------------------------------------------------------
+
+\end{document}
