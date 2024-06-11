@@ -1,0 +1,147 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+```{r "loading data", echo=FALSE, include=FALSE}
+source("Code Transformations.R")
+```
+
+The data used by \cite{meda2017longitudinal} was gathered by a longitudinal study of first year students at two colleges in the North East of the United States using the semester System. The students in the study were given a an identification number and self reported their grades over 4 Semester, the amount of alcoholic drinks consumed and the amount of time they consumed marijuana. The gathered metrics for substance use did not come with further information on the metrical amount consumed, type or way of consumption, however there was an additional variable which tracked the amount of times a student on average consumed alcohol in the past month. Due to the fact that the authors of \cite{meda2017longitudinal} did not look further into this variable in the entirety of their paper, I dropped it in the replication attempt as well. Students were also provided a way to provide an interval for each consumed substance, in which case the middle point of the interval was used in the aggregation to the average amount consumed per semester. 
+
+In \cite{meda2017longitudinal} it is mentioned that the amount of times Marijuana was consumed was further classified into categories on a scale from 1 to 6, with category 6 representing the biggest consumption of Marijuana. They've also stated that both substance use data were transformed using a logarithmic function, with only the logarithmic transformed being provided in the accessible data. Through replicating the table on page 7 in the given paper, it becomes apparent that the logarithmic base used was 10 for both substances, however this leads to a direct contradiction in the supposed data generating process. The highest value in the provided MJ consumption data is 1.41, the required base to transform to the categories 6 would be roughly 2.88. After visualizing the data (see below) it seems likely that solely the logarithmic value was used and a value of 25 was used as a cut of point for higher values. The reported classes in the paper could not be observed.
+
+The study further gathered additional metrics for each participating student at study entry, such as their age, their SAT scores, including their scores in the three sections (math, writing and verbal), their Parental Socio Economic Status (Parental_SES), the Beck Depression Index (BDI), the students Gender (Sex), their smoking status (Fager4_binary), their Family History of for Alcoholism (FH_binary, with positive implying that such a history exists) and their State Traite Anxiety Score (STAI), with the Parental SES, BDI, and STAI being questionnaires resulting in scores, with a higher score implying a higher socio economic parental standing, higher likelihood of developing a depression and higher Anxiety levels respectively, while Sex, Family History for Alcoholism and smoking status being categorical values. These variables were gathered once for each Student at the beginning of the study 
+
+A total of 1142 students participated over 4 semester with a 95 % possible participation rate. The authors followed this up grouping the substance usage into three clusters, with them being 'no to low alcohol usage' / 'no to low marijuana usage', 'medium to high alcohol usage' / 'no to low marijuana usage' and 'medium to high alcohol usage' / 'medium to high marijuana usage'. An additional fourth Cluster to differentiate the marijuana usage was not formed and they are described further below which is explained further below. The following table serves as a direct replication of the table provided on page 7, as well as an overview of the used data stratified by the clusters the students were placed into in Semester 1:
+
+```{r "page 7 table replication", echo = FALSE}
+variables.paper.page7table <- c("Age1stround", "SATMath", "SATVerbal", "SATWriting", "GPA", "Parental_SES", "STAI_SELF_Total", "BDI_SELF_Total", "Avg_Drinks_SEM1", "Avg_MJ_SEM1", "Sex", "Fager4_binary", "FH_binary") 
+catvars.paper.page7table <- c("Sex", "Fager4_binary", "FH_binary")
+paper.page7table <- CreateTableOne(data = (data.file.long %>% filter(Semester == 1)), vars = variables.paper.page7table, catvars.paper.page7table, strata = "Cluster_SEM1", includeNA = TRUE, test = TRUE)
+
+## tableone only uses ChisqTests. ContV --> bins --> discrete --> ChisqT
+```
+
+```{r page7table displayed, echo=FALSE}
+paper.page7table
+```
+
+The replicated table is almost identical with table given in the paper, with the sole exception that for the Continuous Variables the replicated table utilized a Chi Squared Test, which discretizises the data through data binning and is therefor an approximation, though preferable if there are small measurement errors, while Mena et al. utilized an ANOVA F-test to directly compare the groups. Potentially due to the large sample size there are only trivial differences and both have qualitatively equal results, with all but Age, the SAT Sections on Verbal skills and Family History of Alcoholism  significant differing between the three Clusters (footnote, testing if the substance usage significantly differ between the clusters is somewhat trivial and self proofing, as the clusters were directly created by clustering on alcohol and marijuana usage.). There are also trivial differences in the Mean and standard deviation of some variables, though this comes seemingly down to algorithmic calculation or rounding.
+
+In the provided data there were multiple instances in which these variables have entries of `0`. Unfortunately the authors didn't give any information over what these entries should represent, as for example the SAT Score cannot be lower than 600. In the case of the GPA this could for example be due to the fact that students are dropping out, or that they these are missing values. The cases for both variables can be seen here.
+
+```{r "GPA and SAT = 0", echo = FALSE, include = FALSE}
+plot.gpa0 <- ggplot(ind.gpa0, aes(x = Semester, y = GPA, group = BARCS_ID, col = BARCS_ID)) + 
+  geom_line(alpha = .5)+ theme_bw() + ggtitle("GPA over all Semester for Studens with atleast one GPA =0")
+dim(ind.sat0 %>% filter(GPA == 0))
+dim(unique(ind.sat0 %>% filter(GPA == 0) %>% select(BARCS_ID)))
+dim(ind.gpa0)
+dim(ind.sat0)
+```
+```{r}
+cowplot::plot_grid(plot.gpa0 + theme(legend.position="none"),
+ggplot(ind.sat0, aes(y = SATTotal, x = GPA)) + geom_point(alpha =.1) + theme_bw()+ ggtitle("SAT overall score & GPA for Studens with atleast one SAT =0"), nrow = 1)
+c(dim(ind.sat0 %>% filter(GPA == 0)), dim(unique(ind.sat0 %>% filter(GPA == 0) %>% select(BARCS_ID))))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Data
+
+* Describe the data and its quality.
+
+* How was the data sample selected?
+
+* Provide descriptive statistics such as:
+
+  * time period,
+
+  * item number of observations, data frequency,
+
+  * item mean, median,
+
+  * item min, max, standard deviation,
+
+  * item skewness, kurtosis, Jarque--Bera statistic,
+
+  * item time series plots, histogram.
+
+* For example:
+
+```{r table1, echo=FALSE}
+library(knitr)
+library(kableExtra)
+library(dplyr)
+col_names <- c(
+  "3m", "6m", "1yr", "2yr", "3yr", "5yr", "7yr", "10yr", "12yr", "15yr"
+)
+means     <- c(
+  3.138, 3.191, 3.307, 3.544, 3.756, 4.093, 4.354, 4.621, 4.741, 4.878
+)
+stddev    <- c(
+  0.915, 0.919, 0.935, 0.910, 0.876, 0.825, 0.803, 0.776, 0.768, 0.762
+)
+row_names <- c("Mean", "StD")
+
+df <- matrix(data = c(means, stddev), nrow = 2, byrow = T)
+rownames(df) <- row_names
+colnames(df) <- col_names
+df <- data.frame(df)
+knitr::kable(
+  df,
+  booktabs = TRUE,
+  caption = "Detailed descriptive statistics of location and dispersion for 2100 observed swap rates for the period from February 15, 1999 to March 2, 2007. Swap rates measured as 3.12 (instead of 0.0312).",
+  col.names = col_names, 
+  escape = FALSE
+) %>%
+kable_styling(latex_options = c("HOLD_position")) %>%
+row_spec(2, hline_after = T)
+```
+
+* Allows the reader to judge whether the sample is biased or to evaluate 
+  possible impacts of outliers, for example.
+
+* Here tables can be easily integrated using the `kable()` function in the
+  `knitr` package (with perhaps some additional help from the `kableExtra`
+  package). `kable()` will automatically generate a label for the table
+  environment. That way you don't have to manually enter in the table in LaTex,
+  you can embed tables from R code. 
+
+* Tables can be referenced using `\@ref(label)`, where `label` is `tab:<name>`,
+  where `<name>` is the code chunk label.
+
+* The appearance may look different to tables directly typed with LaTex, due to
+  limitations in `kable()`. To compare:
+    \begin{table}[ht]
+
+    \begin{center}
+        {\footnotesize
+        \begin{tabular}{l|cccccccccc}
+            \hline \hline
+                      & 3m    & 6m    & 1yr   & 2yr   & 3yr   & 5yr   & 7yr   & 10yr  & 12yr  & 15yr   \\
+            \hline
+                Mean   & 3.138 & 3.191 & 3.307 & 3.544 & 3.756 & 4.093 & 4.354 & 4.621 & 4.741 & 4.878  \\
+                StD    & 0.915 & 0.919 & 0.935 & 0.910 & 0.876 & 0.825 & 0.803 & 0.776 & 0.768 & 0.762  \\
+            \hline \hline
+        \end{tabular}}
+    \end{center}
+    \caption{This table was handwritten with LaTeX.}
+    \label{tab:table2}
+    \end{table}
+    
+
+\newpage
