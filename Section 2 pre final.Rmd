@@ -93,10 +93,10 @@ df_scores_Cor[,-3]
 ```
 
 ```{r "entirely estimated DO NOT RUN", echo = FALSE, include = FALSE}
-# fmri.nlme.entirelyestimated <- lme(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  + Semester*Cluster_current + Semester,
-#                      random = ~ 1 | BARCS_ID, correlation = corSymm(form = ~ Time| BARCS_ID), 
-#                      weights = varIdent(form = ~ 1 | BARCS_ID), 
-#                      data = data.file.long, na.action = na.exclude, control = list(opt = "optim", msMaxIter = 200))
+  # fmri.nlme.entirelyestimated <- lme(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  + Semester*Cluster_current + Semester,
+  #                      random = ~ 1 | BARCS_ID, correlation = corSymm(form = ~ Time| BARCS_ID),
+  #                      weights = varIdent(form = ~ 1 | BARCS_ID),
+  #                      data = data.file.long, na.action = na.exclude, control = list(opt = "optim", msMaxIter = 200))
 # AIC(fmri.nlme.entirelyestimated)
 ```
 
@@ -155,6 +155,7 @@ the first one with manually computed significance with the SIdak correction, the
 ```{r 'replicating page 9 significance table' }
 print(as.data.frame(anova.pt))
 Anova(pseudo.trajectory.ARMA11)#, test.statistic = "F",  robust= "hc3", correction = "Sidak")
+summary(full.model.ARMA11, correction = "Sidak")
 ```
 
 ```{r, echo=FALSE}
@@ -205,9 +206,9 @@ time.slope.AR1 <- lme(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + 
 page 7
 
 ```{r}
-plot(effect("Semester*Cluster_current", full.model.ARMA11, robust= "hc3", correction = "Sidak"))
-plot(effect("Cluster_current*Semester", small.model.ARMA11, robust= "hc3", correction = "Sidak"))
-plot(effect("Cluster_current*Time", time.slope.ARMA11, robust= "hc3", correction = "Sidak"))
+plot(effect("Semester*Cluster_current", full.model.ARMA11, robust= "hc3", correction = "Sidak"), main = "Full Model: Cluster & Semester")
+plot(effect("Cluster_current*Semester", small.model.ARMA11, robust= "hc3", correction = "Sidak"), main = "Small Model: Cluster & Semester")
+plot(effect("Cluster_current*Time", time.slope.ARMA11, robust= "hc3", correction = "Sidak"), main = "Time Model: Cluster & Semester")
 ```
 
 

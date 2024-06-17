@@ -6,7 +6,7 @@ title: "Computationale Reproduzierbarkeit von Meda et al. (2016): Longitudinal i
 type: "Bachelor's Thesis"
 author: "Colin Linke"
 matriculation_number: "12343106"
-date: "dd.mm.yyyy"
+date: "19.06.2024"
 university: "Ludwig-Maximilians-Universität München"
 institute: "Fakultät für Mathematik, Informatik und Statistik" 
 chair: "Institut für Statistik"

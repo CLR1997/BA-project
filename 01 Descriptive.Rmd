@@ -17,9 +17,9 @@ source("Code Transformations.R")
 
 
 
-The data used by Meda et al. was gathered by a longitudinal study of first year students at two colleges in the North East of the United States using the semester System. The students in the study were given a an identification number and self reported their grades over 4 Semester, the amount of alcoholic drinks consumed and the amount of time they consumed marijuana. The gathered metrics for substance use did not come with further information on the metrical amount consumed, type or way of consumption, however there was an additional variable which tracked the amount of times a student on average consumed alcohol in the past month. Due to the fact that the authors of Meda et al. did not look further into this variable in the entirety of their paper, I dropped it in the replication attempt as well. Students were also provided a way to provide an interval for each consumed substance, in which case the middle point of the interval was used in the aggregation to the average amount consumed per semester. 
+The data used by Meda et al. was gathered by a longitudinal study of first year students from two colleges in the United States using the semester System. The study was independently approved by institutional review boards from Central Connecticut State University (CCSU), Trinity College, Hartford Hospital and Yale University, the  students participating gave written conset for the data collection, but the participating colleges in the study were not specified, nor was there any differentiation in the data between them. The students in the study were given a an identification number and self reported their grades over 4 Semester, the amount of alcoholic drinks consumed and the amount of time they consumed marijuana. The gathered metrics for substance use did not come with further information on the metrical amount consumed, type or way of consumption, however there was an additional variable which tracked the amount of times a student on average consumed alcohol in the past month. Due to the fact that the authors of Meda et al. did not look further into this variable in the entirety of their paper, I dropped it in the replication attempt as well. If  students were unsure of their substance usage they have had the option to provide  also provide an interval of their substance usage in a given time period, in which case the middle point of the interval was used for the aggregation the average amount consumed per semester. 
 
-In Mena et al. it is mentioned that the amount of times Marijuana was consumed was further classified into categories on a scale from 1 to 6, with category 6 representing the biggest consumption of Marijuana. They've also stated that both substance use data were transformed using a logarithmic function, with only the logarithmic transformed being provided in the accessible data. Through replicating the table on page 7 in the given paper, it becomes apparent that the logarithmic base used was 10 for both substances, however this leads to a direct contradiction in the supposed data generating process. The highest value in the provided MJ consumption data is 1.41, the required base to transform to the categories 6 would be roughly 2.88. After visualizing the data (see below) it seems likely that solely the logarithmic value was used and a value of 25 was used as a cut of point for higher values. The reported classes in the paper could not be observed.
+In Meda et al. it is mentioned that the amount of times Marijuana was consumed was further classified into categories on a scale from 1 to 6, with category 6 representing the biggest consumption of Marijuana. They've also stated that both substance use data were transformed using a logarithmic function, with only the logarithmic transformed being provided in the accessible data. Through replicating the table on page 7 in the given paper, it becomes apparent that the logarithmic base used was 10 for both substances, however this leads to a direct contradiction in the supposed data generating process. The highest value in the provided MJ consumption data is 1.41, the required base to transform to the categories 6 would be roughly 2.88. After visualizing the data (further below) it seems likely that solely the logarithmic values were used and a value of 25 was defined as an upper ceilling for the amount of times Marijuana was consumed. The reported classes in the paper could not be observed, nor were other characteristics such as major / minor.
 
 The study further gathered additional metrics for each participating student at study entry, such as their age, their SAT scores, including their scores in the three sections (math, writing and verbal), their Parental Socio Economic Status (Parental_SES), the Beck Depression Index (BDI), the students Gender (Sex), their smoking status (Fager4_binary), their Family History of for Alcoholism (FH_binary, with positive implying that such a history exists) and their State Traite Anxiety Score (STAI), with the Parental SES, BDI, and STAI being questionnaires resulting in scores, with a higher score implying a higher socio economic parental standing, higher likelihood of developing a depression and higher Anxiety levels respectively, while Sex, Family History for Alcoholism and smoking status being categorical values. These variables were gathered once for each Student at the beginning of the study 
 
@@ -29,7 +29,6 @@ A total of 1142 students participated over 4 semester with a 95 % possible parti
 variables.paper.page7table <- c("Age1stround", "SATMath", "SATVerbal", "SATWriting", "GPA", "Parental_SES", "STAI_SELF_Total", "BDI_SELF_Total", "Avg_Drinks_SEM1", "Avg_MJ_SEM1", "Sex", "Fager4_binary", "FH_binary") 
 catvars.paper.page7table <- c("Sex", "Fager4_binary", "FH_binary")
 paper.page7table <- CreateTableOne(data = (data.file.long %>% filter(Semester == 1)), vars = variables.paper.page7table, catvars.paper.page7table, strata = "Cluster_SEM1", includeNA = TRUE, test = TRUE)
-
 ## tableone only uses ChisqTests. ContV --> bins --> discrete --> ChisqT
 ```
 
@@ -38,13 +37,13 @@ paper.page7table <- CreateTableOne(data = (data.file.long %>% filter(Semester ==
 paper.page7table
 ```
 
-The replicated table is almost identical with table given in the paper, with the sole exception that for the Continuous Variables the replicated table utilized a Chi Squared Test, which discretizises the data through data binning and is therefor an approximation, though preferable if there are small measurement errors, while Mena et al. utilized an ANOVA F-test to directly compare the groups. Potentially due to the large sample size there are only trivial differences and both have qualitatively equal results, with all but Age, the SAT Sections on Verbal skills and Family History of Alcoholism  significant differing between the three Clusters (footnote, testing if the substance usage significantly differ between the clusters is somewhat trivial and self proofing, as the clusters were directly created by clustering on alcohol and marijuana usage.). There are also trivial differences in the Mean and standard deviation of some variables, though this comes seemingly down to algorithmic calculation or rounding.
+The replicated table is almost identical with table given in the paper, with the sole exception that for the Continuous Variables the replicated table utilized a Chi Squared Test, which discretizises the data through data binning and is therefor an approximation, though preferable if there are small measurement errors, while Meda et al. utilized an ANOVA F-test to directly compare the groups. Potentially due to the large sample size there are only trivial differences and both have qualitatively equal results, with all but Age, the SAT Sections on Verbal skills and Family History of Alcoholism  significant differing between the three Clusters (footnote, testing if the substance usage significantly differ between the clusters is somewhat trivial and self proofing, as the clusters were directly created by clustering on alcohol and marijuana usage.). There are also trivial differences in the Mean and standard deviation of some variables, though this comes seemingly down to algorithmic calculation or rounding.
 
 In the provided data there were multiple instances in which these variables have entries of `0`. Unfortunately the authors didn't give any information over what these entries should represent, as for example the SAT Score cannot be lower than 600. In the case of the GPA this could for example be due to the fact that students are dropping out, or that they these are missing values. The cases for both variables can be seen here.
 
 ```{r "GPA and SAT = 0", echo = FALSE, include = FALSE}
 plot.gpa0 <- ggplot(ind.gpa0, aes(x = Semester, y = GPA, group = BARCS_ID, col = BARCS_ID)) + 
-  geom_line(alpha = .5)+ theme_bw() + ggtitle("GPA over all Semester for Studens with atleast one GPA =0")
+  geom_line(alpha = .5)+ theme_bw() + ggtitle("at least one GPA = 0")
 dim(ind.sat0 %>% filter(GPA == 0))
 dim(unique(ind.sat0 %>% filter(GPA == 0) %>% select(BARCS_ID)))
 dim(ind.gpa0)
@@ -52,15 +51,15 @@ dim(ind.sat0)
 ```
 ```{r}
 cowplot::plot_grid(plot.gpa0 + theme(legend.position="none"),
-ggplot(ind.sat0, aes(y = SATTotal, x = GPA)) + geom_point(alpha =.1) + theme_bw()+ ggtitle("SAT overall score & GPA for Studens with atleast one SAT =0"), nrow = 1)
+ggplot(ind.sat0, aes(y = SATTotal, x = GPA)) + geom_point(alpha =.1) + theme_bw()+ ggtitle("at least one SAT=0"), nrow = 1)
 c(dim(ind.sat0 %>% filter(GPA == 0)), dim(unique(ind.sat0 %>% filter(GPA == 0) %>% select(BARCS_ID))))
 ```
 
 Considering that students usually have non zero GPA data points before and after they are assinged a value of '0',  it seems likely that a lot students were wrongly assigned '0' for NAs here. Additionally, a completed SAT can not have a point total of zero. It is also extremely likely '0' entries here are missing data, as most students also have a nonzero GPA, therefor implying that these are actually likely just missing. Entries of zeroes for these two variables were subsequently imputed as NAs to avoid introducing bias into later estimates. There were a total of twelve observations with double entries of zeroes for the SAT and the GPA from eleven different students in Semesters 3 & 4 and a total of 268 & 240 entries of zero for the GPA & SAT variables respectively.
 
-Due to the nature of self reporting in general can lead to measurement errors, further transformation can lead to the introduction of bias. For this reason, apart from the aforementioned transformation, the rest of the provided data  was taken as it was provided.
+The nature of self reporting in general can lead to measurement errors, but further transformation of the data was not undertaken to avoid the introduction of bias through false assumptions. For this reason, apart from the aforementioned transformation, the rest of the provided data was taken as it was provided and assumed to be correct.
 
-The following plots show the the composition of the three different cluster given the alcohol and marijuana consumption choices. The first plot is a direct replication of the plot on the bottom of page 5 from Mena et al., while the second plot represent the cluster assignment given the untransformed alcohol and marijuana consumption. In the third plot, the untransformed variables are shown, however only values up to on average 12 monthly consumed alcoholic beverages & 10 times average MJ consumptions are being displayed in order for the separation between cluster 1 and 2 to become  more visibly apparent.
+The following scatterplots show the the composition of the three different cluster given the alcohol and marijuana consumption choices. The first plot is a direct replication of the plot on the bottom of page 5 from Meda et al., while the second plot represent the cluster assignment given the untransformed alcohol and marijuana consumption. In the third plot, the untransformed variables are shown, however only values up to on average 12 monthly consumed alcoholic beverages & 10 times average marijuana consumptions are being displayed in order for the separation between the first and second cluster to become visibly apparent.
 ```{r "page 5 replication", echo = FALSE}
 data.file.long <- data.file.long %>% 
   mutate(Cluster_current = as.factor(Cluster_current),
@@ -70,10 +69,10 @@ cluster.title <- "Cluster"
 plot.page5 <- ggplot(data.file.long, 
                      aes(x = LOG_Avg_MJ_current, y = LOG_Avg_Drinks_current, col = Cluster_current)) + 
   geom_point() +
-  xlab("Average Monthly MJ / Cannabis Use (Log10 Transformed)") +
-  ylab("Average Number of Drinks per Month (Log10 Transformed)") +
+  xlab("Average Monthly Marijuana usage") +
+  ylab("Average Number of Drinks per Month") +
   labs(colour = "cluster") +
-  ggtitle("Cluster alocation given Alcohol & MJ consumption (log10 transformed)") +
+  ggtitle("Cluster alocation given Substance usage (log10 transformed)") +
   scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +
   facet_wrap(~ Semester)
 
@@ -81,10 +80,10 @@ plot.page5 <- ggplot(data.file.long,
 plot.page5.nottransformed <- ggplot(data.file.long, 
                      aes(x = Avg_MJ_current, y = Avg_Drinks_current, col = Cluster_current)) + 
   geom_point(alpha = 0.25) + #ylim(0, 50) +
-  xlab("Average Monthly MJ / Cannabis Use (not transformed)") +
-  ylab("Average Number of Drinks per Month (not transformed)") +
+  xlab("Average Monthly Marijuana usage") +
+  ylab("Average Number of Drinks per Month") +
   labs(colour = "cluster") +
-  ggtitle("Cluster alocation given Alcohol & MJ consumption") +
+  ggtitle("Cluster alocation given Substance usage") +
   scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +
   facet_wrap(~ Semester)
   
@@ -93,10 +92,10 @@ plot.page5.nottransformed <- ggplot(data.file.long,
 plot.page5.nottransformed.focused <- ggplot(data.file.long, 
                      aes(x = Avg_MJ_current, y = Avg_Drinks_current, col = Cluster_current)) + 
   geom_point(alpha = 1) + ylim(0, 12) + xlim(0, 8) +
-  xlab("Average Monthly MJ / Cannabis Use (not transformed)") +
-  ylab("Average Number of Drinks per Month (not transformed)") +
+  xlab("Average Monthly Marijuana usage") +
+  ylab("Average Number of Drinks per Month") +
   labs(colour = "cluster") +
-  ggtitle("Showing the Separation") +
+  ggtitle("Cluster alocation given Substance usage (focused)") +
   scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +
   facet_wrap(~ as.factor(Semester))
   
@@ -108,52 +107,26 @@ suppressWarnings(print(plot.page5.nottransformed))
 suppressWarnings(print(plot.page5.nottransformed.focused)) 
 ```
 
-The first plot is a direct replication of the shown graphic on page 5 of Mena et al. Here they show the relationship between the consumption use and the assigned Cluster in each of the 4 semester for each student. Mena et al. used a two step clustering algorithm, an initially hierarchically ordering the substance usage, which was then used to create various cluster, from which the cluster structure with the smallest AIC score was chosen. The cluster are time varying and based on the AIC there wasn't an additional 4th cluster constructed to differentiate between No-low MJ usage and medium - high MJ usage for medium - high alcoholic usage. The reported kappa statistic for the interreliaby cluster coherence between subsequent semester to the first are 
+The first scatter plot is a direct replication of the shown graphic on page 5 of Meda et al. Here they show the relationship between the consumption use and the assigned Cluster in each of the 4 semester for each student. Meda et al. used a two step clustering algorithm, an initially hierarchically ordering the substance usage, which was then used to create various cluster, from which the cluster structure with the smallest AIC score was chosen. The maximum specified number of clusters were specified to be at most '2x2', which means that the there were only a maximum of four clusters, with each substance usage can only be separated once given the same consumption for the other substance. The cluster are time varying and based on the AIC, which lead to only three clusters being created and lead to the exclusion of an additional fourth cluster to differentiate between 'No-low marijuana usage' and 'medium - high marijuana usage' for 'medium - high alcoholic' usage. The reported kappa statistic for the inter-rater reliability cluster coherence between subsequent semester to the first semester are 
 ```{r}
 Sem1_to <- c("Sem 2", "Sem 3", "Sem 4")
 kappa_value <- c(0.64, 0.70, 0.67)
 t(data.frame(Sem1_to, kappa_value))
 ```
-with reported p value of < 0.001, which suggest substantial agreement of cluster assignment over time. 
+with a reported p value of < 0.001. The Kappa value here is calculated by through how many students were placed in the same cluster in subsequent semester as in the first semester. The results here are statistically significant and suggest substantial agreement and of cluster assignment over time. 
 
-These cluster assignments are taken as they were given by the authors of the paper, though this approach has a few short comings. Firstly, the clustering methods applied are not robust, different starting points can lead to different cluster assignments. Due to scarce information in Mena et al. it is unclear if additional steps were taking for a more robust cluster assignment. Secondly, the fact that the cluster assignment is time varying can make sense from the statistical perspective, however this means that students with identical substance usage across all semesters can be assigned to different clusters in the different semesters. Later interpretation of cluster parameters in regressions should therefor only be between Cluster assignment within a semester. In addition Mena et al. investigate effect the effect group transitions have on GPA, with group transition being used as a stand in for a significant change in substance usage. This approach can lead skewed results as minor consumption changes can lead to a new cluster assignment for some students, while for others much major significant change is required, yet both would be counted the same. Thirdly, transforming two variables into a single factor offers the benefit of mitigating the impact of outliers, which is later shown to be warranted, and simplifies the analysis and interpretation, this leads to a loss in information. There is also not a risk of multicolinearity, as the correlation between the two variables is only moderately high at 0.41 (footnote 0.47 for the log transformed data).
+These cluster assignments are taken as they were given by the authors of the paper, though this approach has a few short comings. Firstly, the clustering methods applied are not robust, different starting points can lead to different cluster assignments. Due to scarce information in Meda et al. it is unclear if additional steps were taking for a more robust cluster assignment. Secondly, the fact that the cluster assignment is time varying can make sense from the statistical perspective, however this means that students with identical substance usage across all semesters can be assigned to different clusters in the different semesters. Later interpretation of cluster parameters in regressions should therefor only be between Cluster assignment within a semester. In addition Meda et al. investigate effect the effect group transitions have on GPA, with group transition being used as a stand in for a significant change in substance usage. This approach can lead skewed results as minor consumption changes can lead to a new cluster assignment for some students, while for others much major significant change is required, yet both would be counted the same. Thirdly, transforming two variables into a single factor offers the benefit of mitigating the impact of outliers, which is later shown to be warranted, and simplifies the analysis and interpretation, this leads to a loss in information. There is also not a risk of multicolinearity, as the correlation between the two variables is only moderately high at 0.41 (footnote 0.47 for the log transformed data).
 ```{r, echo = FALSE}
 cor(data.file.long$Avg_Drinks_current, data.file.long$Avg_MJ_current, use = "pairwise.complete.obs")
 cor(data.file.long$LOG_Avg_Drinks_current, data.file.long$LOG_Avg_MJ_current, use = "pairwise.complete.obs")
 ```
-Lastly, the field of statistics is an interdisciplinary field and using only statistical methods can come at the cost of interpreting the results and / or potentialy lack a real world context. It can be seen in the two untransformed plots above that the cutoff between Cluster 1 and Cluster 2 at roughly 3 alcoholic drinks per months, varying through the semester. The labeling of these clusters must be seen as a relative description between the clusters, but labeling the consumption of 5 alcoholic drinks per month as moderate alcohol usage is a subjective interpretations on the authors part. The cluster assignments could have also been based on, or partially based on previously established guidelines or research. The National Institue on Alcohol Abuse and Alcoholism for example defines heavy drinking as "consuming five or more drinks on any day or 15 or more per week [for men, or] consuming four or more on any day or 8 or more drinks per week [for women]", which would give an inherent interpretation of the cluster assignment. The NIAAA is also the same organisation which funded the study conducted by Mena et al. The usage of such guidelines can introduce another can of worms, given that the consumption of alcohol and Marijuana at the time of the study was illegal for the majority of the participating students and applying these guidelines has also an ethical aspect, it is understandable that the Authors decided to sidestep these concerns, however it is important to view these categories as a relative differences in the consumption behavior between the cluster in each semester.
+Lastly, the field of statistics is an interdisciplinary field and using only statistical methods can come at the cost of interpreting the results and / or potentially lack real world context. The two scatterplots with unstranformed substance sage highlight that the cutoff between Cluster 1 and Cluster 2 is at roughly 3 alcoholic drinks per months, only slightly varying through the semesters. The labeling of these clusters must therefor be seen as a relative description between the clusters, but labeling the consumption of 5 alcoholic drinks per month as moderate alcohol usage is a subjective interpretations on the end of the authors. The cluster assignments could have been based on, or partially based on, previously established guidelines or research. The National Institute on Alcohol Abuse and Alcoholism defines heavy drinking as "consuming five or more drinks on any day or 15 or more per week [for men, or] consuming four or more on any day or 8 or more drinks per week [for women]", with such a separating criterium being able to give an inherent interpretation of the cluster assignment. The NIAAA is also the same organisation which funded the study conducted by Meda et al. It should be stated that the usage of such a guideline may pose an ethical or legal problem, given that the consumption of alcohol and marijuana at the time of the study was illegal for the majority of the participating students. It is understandable that the Authors decided to sidestep these concerns or and it is also valid to utilize statistical methods, though it is important to view these categories as a relative difference in consumption behavior between the clusters in each observed semester.
 
 ```{r "NIAAA guideline source", echo = FALSE} 
 #https://www.niaaa.nih.gov/alcohol-health/overview-alcohol-consumption/moderate-binge-drinking#:~:text=Heavy%20Alcohol%20Use%3A&text=For%20men%2C%20consuming%20five%20or,or%20more%20drinks%20per%20week 
 ``` 
 
-
-
-
-```{r GPA - Alcohol visualisation, echo=FALSE}
-plot.alcgpa <- ggplot(subset(subset(data.file.long, !is.na(Cluster_SEM1)) , sum.GPAna != 4), aes(x = Avg_Drinks_current, y = GPA, colour = Cluster_current)) +
-  geom_point(alpha = 0.15) + #geom_smooth()  + ###to get a smooth fct for each cluster in every stratified plot
-  geom_smooth(aes(group = 1), color = "black") +
-  ylim(0, 4.5) + xlim(0, 125) + ylab("GPA in the given Semester") +
-  xlab("Average Number of Drinks per Month (not transformed)") +
-  labs(colour = "current Cluster") +
-  ggtitle("Alcohol consumption & GPA given original Cluster specification") + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +
-  facet_grid(Cluster_SEM1 ~ Semester, scales = "free")
-
-
-plot.alcgpa.outliers <- ggplot(subset(subset(data.file.long, !is.na(Cluster_SEM1)) , sum.GPAna != 4), aes(x = Avg_Drinks_current, y = GPA, colour = Cluster_current)) +
-  geom_point(alpha = 1)   +
-  ylim(0, 4.5) + xlim(125, 350) + ylab("GPA in the given Semester") +
-  xlab("Average Number of Drinks per Month (not transformed)") +
-  labs(colour = "current Cluster") +
-  ggtitle("Alcohol consumption & GPA given original Cluster specification") + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +
-  facet_grid(Cluster_SEM1 ~ Semester, scales = "free")
-
-
-plot.alcoholGPA <- ggplot(data = data.file.long, aes(x=Avg_Drinks_current, y=GPA)) +
-  geom_point(alpha = 0.15) + geom_smooth() + ylim(0, 4.5) + facet_wrap(~Semester) +
-  labs(x="Alcohol consumption per month during Semester" , y="GPA") + xlim(0, 150) + theme_bw()
-```
+The following two scatter plots showcase the relationship presents the 
 
 ```{r}
 plot.alcgpa2<-  ggplot(data = data.file.long, aes(x=Avg_Drinks_current, y=GPA, colour = Cluster_current)) +
@@ -161,61 +134,51 @@ plot.alcgpa2<-  ggplot(data = data.file.long, aes(x=Avg_Drinks_current, y=GPA, c
   labs(x="Average Number of Drinks per Month (not transformed)" , y="GPA") + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw()
 
 plot.alcgpa.outliers2<-  ggplot(data = data.file.long, aes(x=Avg_Drinks_current, y=GPA, colour = Cluster_current)) +
-  geom_point(alpha = 0.15) + ylim(0, 4.5) + xlim(125,350) + facet_wrap(~Semester, scales = "free") +
+  geom_point(alpha = 1) + ylim(0, 4.5) + xlim(125,350) + facet_wrap(~Semester, scales = "free") +
   labs(x="Average Number of Drinks per Month (not transformed)" , y="GPA") + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw()
 ```
+
+
+Something that is missing in Meda et al. paper is a descriptive illustration of the substance usage compared to the GPA. The following two scatterplots show the average monthly alcoholic a student consumed each semester, stratified by the original cluster assignment in the first semester and are colored according to the given cluster assignment in each semester. The first graph showcases the majority of students with an added smooth function for each Cluster assignment and an alpha setting of 0.15 for the scatter points, while the second graph showcases outliers, namely student who consumed on average more than 125 alcoholic beverages in a given semester. Due to a lack of observation an additional smooth function was not included, nor was an alpha shading. 
+
 ```{r}
 suppressWarnings(print(plot.alcgpa2))
 suppressWarnings(print(plot.alcgpa.outliers2))
 
 ```
-
-
-Something that is missing in Mena et al. paper is a descriptive illustration of the substance usage compared to the GPA. The following two scatterplots show the average monthly alcoholic a student consumed each semester, stratified by the original cluster assignment in the first semester and are colored according to the given cluster assignment in each semester. The first graph showcases the majority of students with an added smooth function for each Cluster assignment and an alpha setting of 0.15 for the scatter points, while the second graph showcases outliers, namely student who consumed on average more than 125 alcoholic beverages in a given semester. Due to a lack of observation an additional smooth function was not included, nor was an alpha shading. 
-
-```{r}
-suppressWarnings(print(plot.alcgpa))
-suppressWarnings(print(plot.alcgpa.outliers))
-```
-
-Generally, in each stratified plot there are very few observed students who have a GPA grade of less than one in almost every stratified plot. There were a total of 51 observation with an GPA of 1.00 or less across all Semesters and Clusters. It can also be seen that there are only few instances in which there was a transition from the first Cluster to the third Cluster or Vice Versa, the majority of transitions were between the second and first Cluster and the third and second Cluster. The decision of the Authors to define the Group transition as simply going from one cluster into another Cluster can therefor be substantiated as there aren't enough instances to make a valuable distinction. (footnote: there was an additional unused variable which tracked and differentiated Cluster transitions in the data set). 
-
-The smooth curves for each 
-The majority of observations are between 0-5 for Cluster 1, 0-40 for Cluster 2 & 0-100 for Cluster 3 over the Semester and the scantness of observation lead to a strong uncertainty in the smooth curve and should therefor be viewed sceptically. 
-
-
-
-
 ```{r, echo = FALSE, include=FALSE}
 data.file.long %>% filter(Avg_Drinks_current > 150) %>% select(Cluster_SEM1, Cluster_current, Avg_Drinks_current, Avg_MJ_current, sum.GPAna, BARCS_ID) %>% group_by(BARCS_ID)
 
 data.file.long %>% filter(Avg_Drinks_current > 125) %>% select(Cluster_SEM1, Cluster_current, Avg_Drinks_current, Avg_MJ_current, sum.GPAna, BARCS_ID) %>% group_by(BARCS_ID)
 
 dim(data.file.long %>% filter(GPA <= 1.0))
+
+table(data.file.long$transition_current)
 ```
-There are a total of 79 & 48 observations with an average mothly consumption of 125 & 150 alcoholic drinks respectively. 
 
+The smooth curves in the first two semesters became almost a linear line, with a small negative slope. While the effect of the smooth effect for third semester being non linear with initially having a slightly positive slope until 40 on average monthly consumed drinks, after which the slope becomes negative and the smooth effect for the fourth semester being almost flat until becoming negative at around roughly 40 monthly consumed drinks. The standard deviation increases for all slopes due to a lack of observations for high alcoholic consumption.
 
-It is noteworthy that a lot of the observed Cluster 3 students are not observed anymore in the following semesters, but I'm going into the missing data further below. 
+In each stratified plot there are few observed students who have a worse GPA than 1.00, with a total of 51 observation across all Semesters and Clusters. There were also few instances of a student transition from the first Cluster to the third Cluster or Vice Versa, which occured a total of 19 and 21 times respectively, with the majority of transitions were between the second and first Cluster and the third and second Cluster, with a total of of 528 of such transitions. The decision of the Authors to define the Group transition as simply going from one cluster into another Cluster can thereby comprehensible as there aren't enough observation for a strong distinction. (footnote: there was an additional unused variable which tracked and differentiated Cluster transitions in the data set). 
 
+In case of the outlieres, there are a total of 79 & 48 observations with an average monthly consumption of 125 & 150 alcoholic drinks respectively. These outliers are not particularly noteworthy for the performed statistical analysis of Meda et al., but if consumed alcohol were to be included as a regressor, then these outliers can have a strong leverage on the estimated parameters.
 
 
 ```{r}
-suppressWarnings(print(plot.alcoholGPA))
+#suppressWarnings(print(plot.alcoholGPA))
 ```
 
 
-THe following scatter plot is an illustration between the GPA and the MJ consumption. The plot is stratified by each Semester with an added smooth function and each point is given an alpha shading setting of 0.15. 
+The following scatter plot is an illustration between the GPA and the monthly average times of marijuana consumption. The plot is stratified by each Semester with an added smooth function and each point is given an alpha shading setting of 0.15. 
 
 ```{r}
 plot.MJGPA<-  ggplot(data = data.file.long, aes(x=Avg_MJ_current, y=GPA, colour = Cluster_current)) +
   geom_point(alpha = 0.15) + geom_smooth(aes(group = 1), color = "black") + ylim(0, 4.5) + facet_wrap(~Semester, scales = "free") +
-  labs(x="MJ consumption during Semester" , y="GPA") + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw()
+  labs(x="Marijuana consumption during Semester" , y="GPA") + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw()
 ```
 ```{r}
 suppressWarnings(print(plot.MJGPA))
 ```
-In each of the four semester there is a strong concentration in the intervall of zero to roughly four TAMJC and and smaller concentration at 25 TAMJC, as this is the highest possible value, effectively establishing a ceiling effect (footnote: is this a correct usage of the term?). There is also an almost linear separation in each of the four plots at roughly TAMJC = 4 between the different Clusters. There is a negative relation between increased Marijuana consumption and GPA with a mostly linear smooth effect across all semester, however due to the scant data between the two concentrations, this could simply reflect the rough arithmetic means of said cluster with a roughly linear trend between the two.  
+In each of the four semester there is a strong concentration between the interval of zero to roughly four TAMJC and and smaller concentration at 25 TAMJC, as this is the highest possible value, effectively establishing a ceiling effect (footnote: is this a correct usage of the term?). There is also an almost linear separation in each of the four plots at roughly TAMJC = 4 between the different Clusters. There is a negative relation between increased Marijuana consumption and GPA with a smooth effect that only minorly from a flat line across all semester, however due to the scant data between the two concentrations, this could simply reflect the rough arithmetic means of said cluster with a roughly linear trend between the two.  
 
 
 Missing Data 
@@ -246,102 +209,135 @@ censoring through dropout
 
 
 
-APPENDEX.
-
-It is noteworthy that the separation between Cluster 1 and 2 is around 3 monthly average alcohol beverages, though the hyperplane of the separation varies across the semester.   
+<!-- APPENDEX. -->
 
 
 
-
-```{r GPA variables}
-gpa.spaghetti <- ggplot(data.file.long %>% filter(!is.na(Cluster_SEM1)), aes(x = Semester, y = GPA, group = BARCS_ID, col = Cluster_current)) +
-  geom_point(alpha = 0.1) + 
-  geom_line(alpha = 0.1) +
-  xlab("Semester") + ylab("Grade Point Average") + labs(colour = "cluster") +
-  ggtitle("GPA along original Cluster classification (1. Semester)") +
-  facet_wrap(~Cluster_SEM1) + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() 
-gpa.spaghetti
-
-gpa.spaghetti.diff <- ggplot(data.file.long %>% filter(!is.na(Cluster_SEM1)), aes(x = Semester, y = diff_GPA, group = BARCS_ID, col = Cluster_current)) +
-  geom_point(alpha = 0.1) + 
-  geom_line(alpha = 0.1) +
-  xlab("Semester") + ylab("Change in GPA to previous Semester") + labs(colour = "cluster") +
-  ggtitle("Different GPA along original Cluster classification (1. Semester)") +
-  facet_wrap(~Cluster_SEM1) + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() 
-gpa.spaghetti.diff
-
-gpa.spaghetti.mean <- ggplot(data.file.long %>% filter(!is.na(Cluster_SEM1)), aes(x = Semester, y = mean_GPA, group = BARCS_ID, col = Cluster_current)) +
-  geom_point(alpha = 0.1) + 
-  geom_line(alpha = 0.1) +
-  xlab("Semester") + ylab("Grade Point Average, mean adjusted") + labs(colour = "cluster") +
-  ggtitle("GPA along original Cluster classification (1. Semester) centered around mean") +
-  facet_wrap(~Cluster_SEM1) + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() 
-gpa.spaghetti.mean
-
-gpa.spaghetti.std <- ggplot(data.file.long %>% filter(!is.na(Cluster_SEM1)), aes(x = Semester, y = std_GPA, group = BARCS_ID, col = Cluster_current)) +
-  geom_point(alpha = 0.1) + 
-  geom_line(alpha = 0.1) +
-  xlab("Semester") + ylab("Standardised Grade Point Average") + labs(colour = "cluster") +
-  ggtitle("GPA along original Cluster classification (1. Semester), standardised") +
-  facet_wrap(~Cluster_SEM1) + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() 
-gpa.spaghetti.std
-
-plot.cluster.sem1.GPA <- ggplot(data = data.file.long, aes(x=as.factor(Semester), y=GPA)) +
-  geom_boxplot(aes(fill=Cluster_SEM1)) + 
-  xlab("Semester") + ylab("Grade Point Average") +
-  ggtitle("GPA given 1. Sem Cluster") +
-   scale_fill_manual(values = cluster.colors, na.translate = TRUE) + theme_bw() + guides(fill="none")
-#plot.cluster.sem1.GPA
-
-plot.cluster.current.GPA <- ggplot(data = data.file.long, aes(x = as.factor(Semester), y=GPA)) +
-  geom_boxplot(aes(fill=Cluster_current)) + 
-  xlab("Semester") + ylab("Grade Point Average") + guides(fill=guide_legend(title="Cluster")) +
-  ggtitle("GPA given current Cluster") +
-  scale_fill_manual(values = cluster.colors, na.translate = TRUE) + theme_bw() 
-#plot.cluster.current.GPA
-
-plot.cluster.sem1.GPA + plot.cluster.current.GPA
-```
-
-
-```{r "GPA interaction with Alcohol"}
-plot.log.alcoholGPA <- ggplot(data = data.file.long, aes(x=LOG_Avg_Drinks_current, y=GPA)) +
-  geom_point(alpha = 0.3) + geom_smooth() + ylim(0, 4.5) + facet_wrap(~Semester) +
-  labs(x="Log10 Alcohol consumption per month during Semester" , y="GPA")
-plot.log.alcoholGPA 
-
-plot.alcoholGPA <- ggplot(data = data.file.long, aes(x=Avg_Drinks_current, y=GPA)) +
-  geom_point(alpha = 0.3) + geom_smooth() + ylim(0, 4.5) + facet_wrap(~Semester) +
-  labs(x="Alcohol consumption per month during Semester" , y="GPA") + xlim(0, 150)
-plot.alcoholGPA 
-```
-Relationship appears to be nonlinear for log transformed Alcohol variable, and somewhat non linear for the transformed variable
-
-
-```{r "GPA interaction with MJ"}
-plot.log.MJGPA<-  ggplot(data = data.file.long, aes(x=LOG_Avg_MJ_current, y=GPA)) +
-  geom_point(alpha = 0.3) + geom_smooth() + ylim(0, 4.5) + facet_wrap(~Semester, scales = "free") +
-  labs(x=" log MJ consumption during Semester" , y="GPA")
-plot.MJGPA<-  ggplot(data = data.file.long, aes(x=Avg_MJ_current, y=GPA)) +
-  geom_point(alpha = 0.3) + geom_smooth() + ylim(0, 4.5) + facet_wrap(~Semester, scales = "free") +
-  labs(x="MJ consumption during Semester" , y="GPA")
-plot.log.MJGPA
-plot.MJGPA
-```
-relationship seems to be mostly linear for both transformed and untransformed MJ usage 
-
-
-```{r}
-
+```{r GPA - Alcohol visualisation, echo=FALSE}
+# plot.alcgpa <- ggplot(subset(subset(data.file.long, !is.na(Cluster_SEM1)) , sum.GPAna != 4), aes(x = Avg_Drinks_current, y = GPA, colour = Cluster_current)) +
+#   geom_point(alpha = 0.15) + #geom_smooth()  + ###to get a smooth fct for each cluster in every stratified plot
+#   geom_smooth(aes(group = 1), color = "black") +
+#   ylim(0, 4.5) + xlim(0, 125) + ylab("GPA in the given Semester") +
+#   xlab("Average Number of Drinks per Month (not transformed)") +
+#   labs(colour = "current Cluster") +
+#   ggtitle("Alcohol consumption & GPA given original Cluster specification") + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +
+#   facet_grid(Cluster_SEM1 ~ Semester, scales = "free")
+# 
+# 
+# plot.alcgpa.outliers <- ggplot(subset(subset(data.file.long, !is.na(Cluster_SEM1)) , sum.GPAna != 4), aes(x = Avg_Drinks_current, y = GPA, colour = Cluster_current)) +
+#   geom_point(alpha = 1)   +
+#   ylim(0, 4.5) + xlim(125, 350) + ylab("GPA in the given Semester") +
+#   xlab("Average Number of Drinks per Month (not transformed)") +
+#   labs(colour = "current Cluster") +
+#   ggtitle("Alcohol consumption & GPA given original Cluster specification") + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +
+#   facet_grid(Cluster_SEM1 ~ Semester, scales = "free")
+# 
+# 
+# plot.alcoholGPA <- ggplot(data = data.file.long, aes(x=Avg_Drinks_current, y=GPA)) +
+#   geom_point(alpha = 0.15) + geom_smooth() + ylim(0, 4.5) + facet_wrap(~Semester) +
+#   labs(x="Alcohol consumption per month during Semester" , y="GPA") + xlim(0, 150) + theme_bw()
 ```
 
 ```{r}
-
+# suppressWarnings(print(plot.alcgpa))
+# suppressWarnings(print(plot.alcgpa.outliers))
 ```
 
-```{r}
 
-```
+<!-- It is noteworthy that the separation between Cluster 1 and 2 is around 3 monthly average alcohol beverages, though the hyperplane of the separation varies across the semester.    -->
+
+
+
+
+<!-- ```{r GPA variables} -->
+<!-- gpa.spaghetti <- ggplot(data.file.long %>% filter(!is.na(Cluster_SEM1)), aes(x = Semester, y = GPA, group = BARCS_ID, col = Cluster_current)) + -->
+<!--   geom_point(alpha = 0.1) +  -->
+<!--   geom_line(alpha = 0.1) + -->
+<!--   xlab("Semester") + ylab("Grade Point Average") + labs(colour = "cluster") + -->
+<!--   ggtitle("GPA along original Cluster classification (1. Semester)") + -->
+<!--   facet_wrap(~Cluster_SEM1) + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw()  -->
+<!-- gpa.spaghetti -->
+
+<!-- gpa.spaghetti.diff <- ggplot(data.file.long %>% filter(!is.na(Cluster_SEM1)), aes(x = Semester, y = diff_GPA, group = BARCS_ID, col = Cluster_current)) + -->
+<!--   geom_point(alpha = 0.1) +  -->
+<!--   geom_line(alpha = 0.1) + -->
+<!--   xlab("Semester") + ylab("Change in GPA to previous Semester") + labs(colour = "cluster") + -->
+<!--   ggtitle("Different GPA along original Cluster classification (1. Semester)") + -->
+<!--   facet_wrap(~Cluster_SEM1) + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw()  -->
+<!-- gpa.spaghetti.diff -->
+
+<!-- gpa.spaghetti.mean <- ggplot(data.file.long %>% filter(!is.na(Cluster_SEM1)), aes(x = Semester, y = mean_GPA, group = BARCS_ID, col = Cluster_current)) + -->
+<!--   geom_point(alpha = 0.1) +  -->
+<!--   geom_line(alpha = 0.1) + -->
+<!--   xlab("Semester") + ylab("Grade Point Average, mean adjusted") + labs(colour = "cluster") + -->
+<!--   ggtitle("GPA along original Cluster classification (1. Semester) centered around mean") + -->
+<!--   facet_wrap(~Cluster_SEM1) + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw()  -->
+<!-- gpa.spaghetti.mean -->
+
+<!-- gpa.spaghetti.std <- ggplot(data.file.long %>% filter(!is.na(Cluster_SEM1)), aes(x = Semester, y = std_GPA, group = BARCS_ID, col = Cluster_current)) + -->
+<!--   geom_point(alpha = 0.1) +  -->
+<!--   geom_line(alpha = 0.1) + -->
+<!--   xlab("Semester") + ylab("Standardised Grade Point Average") + labs(colour = "cluster") + -->
+<!--   ggtitle("GPA along original Cluster classification (1. Semester), standardised") + -->
+<!--   facet_wrap(~Cluster_SEM1) + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw()  -->
+<!-- gpa.spaghetti.std -->
+
+<!-- plot.cluster.sem1.GPA <- ggplot(data = data.file.long, aes(x=as.factor(Semester), y=GPA)) + -->
+<!--   geom_boxplot(aes(fill=Cluster_SEM1)) +  -->
+<!--   xlab("Semester") + ylab("Grade Point Average") + -->
+<!--   ggtitle("GPA given 1. Sem Cluster") + -->
+<!--    scale_fill_manual(values = cluster.colors, na.translate = TRUE) + theme_bw() + guides(fill="none") -->
+<!-- #plot.cluster.sem1.GPA -->
+
+<!-- plot.cluster.current.GPA <- ggplot(data = data.file.long, aes(x = as.factor(Semester), y=GPA)) + -->
+<!--   geom_boxplot(aes(fill=Cluster_current)) +  -->
+<!--   xlab("Semester") + ylab("Grade Point Average") + guides(fill=guide_legend(title="Cluster")) + -->
+<!--   ggtitle("GPA given current Cluster") + -->
+<!--   scale_fill_manual(values = cluster.colors, na.translate = TRUE) + theme_bw()  -->
+<!-- #plot.cluster.current.GPA -->
+
+<!-- plot.cluster.sem1.GPA + plot.cluster.current.GPA -->
+<!-- ``` -->
+
+
+<!-- ```{r "GPA interaction with Alcohol"} -->
+<!-- plot.log.alcoholGPA <- ggplot(data = data.file.long, aes(x=LOG_Avg_Drinks_current, y=GPA)) + -->
+<!--   geom_point(alpha = 0.3) + geom_smooth() + ylim(0, 4.5) + facet_wrap(~Semester) + -->
+<!--   labs(x="Log10 Alcohol consumption per month during Semester" , y="GPA") -->
+<!-- plot.log.alcoholGPA  -->
+
+<!-- plot.alcoholGPA <- ggplot(data = data.file.long, aes(x=Avg_Drinks_current, y=GPA)) + -->
+<!--   geom_point(alpha = 0.3) + geom_smooth() + ylim(0, 4.5) + facet_wrap(~Semester) + -->
+<!--   labs(x="Alcohol consumption per month during Semester" , y="GPA") + xlim(0, 150) -->
+<!-- plot.alcoholGPA  -->
+<!-- ``` -->
+<!-- Relationship appears to be nonlinear for log transformed Alcohol variable, and somewhat non linear for the transformed variable -->
+
+
+<!-- ```{r "GPA interaction with MJ"} -->
+<!-- plot.log.MJGPA<-  ggplot(data = data.file.long, aes(x=LOG_Avg_MJ_current, y=GPA)) + -->
+<!--   geom_point(alpha = 0.3) + geom_smooth() + ylim(0, 4.5) + facet_wrap(~Semester, scales = "free") + -->
+<!--   labs(x=" log MJ consumption during Semester" , y="GPA") -->
+<!-- plot.MJGPA<-  ggplot(data = data.file.long, aes(x=Avg_MJ_current, y=GPA)) + -->
+<!--   geom_point(alpha = 0.3) + geom_smooth() + ylim(0, 4.5) + facet_wrap(~Semester, scales = "free") + -->
+<!--   labs(x="MJ consumption during Semester" , y="GPA") -->
+<!-- plot.log.MJGPA -->
+<!-- plot.MJGPA -->
+<!-- ``` -->
+<!-- relationship seems to be mostly linear for both transformed and untransformed MJ usage  -->
+
+
+<!-- ```{r} -->
+
+<!-- ``` -->
+
+<!-- ```{r} -->
+
+<!-- ``` -->
+
+<!-- ```{r} -->
+
+<!-- ``` -->
 
 
 
