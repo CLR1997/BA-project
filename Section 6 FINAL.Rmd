@@ -256,10 +256,32 @@ fm.outlier.barebones <- lme(GPA ~ Avg_Drinks_current + Avg_MJ_current + Sex + Ag
 
 ```
 
-Hier die plots mit titel: 
+Hier die plots mit titel:
 ```{r}
-ggplot.fmo + ggtitle("Numerical Full Model residuals vs fitted")
-ggplot.smo + ggtitle("Numerical Small Model residuals vs fitted")
+fitted.fmo <- fitted(fm.outlier.barebones)
+resid.fmo <- resid(fm.outlier.barebones)
+df.fmo <- data.frame(fitted.fmo, resid.fmo)
+ggplot.fmo <- ggplot(df.fmo, aes(x = fitted.fmo, y = resid.fmo)) +
+  geom_point(alpha = 0.3) +
+  geom_smooth() +
+  labs(title = "Residuals vs Fitted values NI", x = "Fitted values", y = "Residuals") +
+  theme_bw()
+ggplot.fmo
+
+fitted.smo <- fitted(sm.outlier.barebones)
+resid.smo <- resid(sm.outlier.barebones)
+df.smo <- data.frame(fitted.smo, resid.smo)
+ggplot.smo <- ggplot(df.smo, aes(x = fitted.smo, y = resid.smo)) +
+  geom_point(alpha = 0.3) +
+  geom_smooth() +
+  labs(title = "Residuals vs Fitted values NI", x = "Fitted values", y = "Residuals")+
+  theme_bw()
+ggplot.smo
+```
+
+```{r "estimating the fm with int"}
+fm.outlier.int<- lme(GPA ~ Avg_Drinks_current * Avg_MJ_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES, random = ~ 1| BARCS_ID, data = outlier.removed, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID), method = "REML")
+
 ```
 
 coefficients
@@ -280,8 +302,8 @@ stargazer(range.numeric)
 
 Shapiro Wilks test
 ```{r}
-shapiro.test(sm.outlier.barebones)
-shapiro.test(fm.outlier.barebones)
+shapiro.test(resid(sm.outlier.barebones))
+shapiro.test(resid(fm.outlier.barebones))
 ```
 
 
@@ -332,6 +354,14 @@ stargazer(df.sm.spline[,-3], summary = FALSE)
 stargazer(sm.splines.mix)
 summary(sm.splines.mix$lme)
 plot.gam(sm.splines.mix$gam, all.terms = TRUE, main = "Marijuana consumption spline function")
+fitted.mix <- fitted(sm.splines.mix$lme)
+resid.mix <- resid(sm.splines.mix$lme)
+df.mix <- data.frame(fitted.mix, resid.mix)
+ggplot.mix <- ggplot(df.mix, aes(x = fitted.mix, y = resid.mix)) +
+  geom_point() +
+  geom_smooth() +
+  labs(title = "Residuals vs Fitted values Spline mix", x = "Fitted values", y = "Residuals") +
+  theme_bw()
 ggplot.mix + ggtitle("GAMM residuals vs fitted")
 
 range(random.effects(sm.splines.mix$lme))
