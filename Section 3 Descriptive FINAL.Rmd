@@ -1,0 +1,188 @@
+---
+title: "Final Section 3"
+author: "Colin Linke"
+date: "2024-06-19"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This document contains only the tables, figures referenced statistics in Section 3. Most of the code /etc. was reived in 01 Descriptive.Rmd and previous iteratins, such as 'untitled'
+
+```{r "loading data", echo=FALSE, include=FALSE}
+source("Code Transformations.R")
+```
+
+For the page 7 table replication
+
+
+```{r "page 7 table replication", echo = FALSE}
+variables.paper.page7table <- c("Age1stround", "SATMath", "SATVerbal", "SATWriting", "GPA", "Parental_SES", "STAI_SELF_Total", "BDI_SELF_Total", "Avg_Drinks_SEM1", "Avg_MJ_SEM1", "Sex", "Fager4_binary", "FH_binary") 
+catvars.paper.page7table <- c("Sex", "Fager4_binary", "FH_binary")
+paper.page7table <- CreateTableOne(data = (data.file.long %>% filter(Semester == 1)), vars = variables.paper.page7table, catvars.paper.page7table, strata = "Cluster_SEM1", includeNA = TRUE, test = TRUE)
+## tableone only uses ChisqTests. ContV --> bins --> discrete --> ChisqT
+```
+
+
+```{r page7table displayed, echo=FALSE}
+paper.page7table
+```
+
+```{r "in paper"}
+kable(print(paper.page7table, printToggle=FALSE, noSpaces = TRUE) , format = "latex")
+```
+
+For the 0 --> NA entries 
+
+```{r "GPA and SAT = 0", echo = FALSE, include = FALSE}
+plot.gpa0 <- ggplot(ind.gpa0, aes(x = Semester, y = GPA, group = BARCS_ID, col = BARCS_ID)) + 
+  geom_line(alpha = .5)+ theme_bw() + ggtitle("at least one GPA = 0")
+dim(ind.sat0 %>% filter(GPA == 0))
+dim(unique(ind.sat0 %>% filter(GPA == 0) %>% select(BARCS_ID)))
+dim(ind.gpa0)
+dim(ind.sat0)
+```
+```{r}
+cowplot::plot_grid(plot.gpa0 + theme(legend.position="none"),
+ggplot(ind.sat0, aes(y = SATTotal, x = GPA)) + geom_point(alpha =.1) + theme_bw()+ ggtitle("at least one SAT=0"), nrow = 1)
+c(dim(ind.sat0 %>% filter(GPA == 0)), dim(unique(ind.sat0 %>% filter(GPA == 0) %>% select(BARCS_ID))))
+```
+
+
+
+The cluster replication on page 5
+
+```{r "page 5 replication", echo = FALSE}
+data.file.long <- data.file.long %>% 
+  mutate(Cluster_current = as.factor(Cluster_current),
+         BARCS_ID = as.factor(BARCS_ID))
+cluster.colors <- c('1st.cluster' = "blue", '2nd.cluster' = "green", '3rd.cluster' = "red")
+cluster.title <- "Cluster"
+plot.page5 <- ggplot(data.file.long, 
+                     aes(x = LOG_Avg_MJ_current, y = LOG_Avg_Drinks_current, col = Cluster_current)) + 
+  geom_point() +
+  xlab("Average Monthly Marijuana usage") +
+  ylab("Average Number of Drinks per Month") +
+  labs(colour = "cluster") +
+  ggtitle("Cluster alocation given Substance usage (log10 transformed)") +
+  scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +
+  facet_wrap(~ Semester)
+
+
+plot.page5.nottransformed <- ggplot(data.file.long, 
+                     aes(x = Avg_MJ_current, y = Avg_Drinks_current, col = Cluster_current)) + 
+  geom_point(alpha = 0.25) + #ylim(0, 50) +
+  xlab("Average Monthly Marijuana usage") +
+  ylab("Average Number of Drinks per Month") +
+  labs(colour = "cluster") +
+  ggtitle("Cluster alocation given Substance usage") +
+  scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +
+  facet_wrap(~ Semester)
+  
+
+
+plot.page5.nottransformed.focused <- ggplot(data.file.long, 
+                     aes(x = Avg_MJ_current, y = Avg_Drinks_current, col = Cluster_current)) + 
+  geom_point(alpha = 1) + ylim(0, 12) + xlim(0, 8) +
+  xlab("Average Monthly Marijuana usage") +
+  ylab("Average Number of Drinks per Month") +
+  labs(colour = "cluster") +
+  ggtitle("Cluster alocation given Substance usage (focused)") +
+  scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +
+  facet_wrap(~ as.factor(Semester))
+  
+#cowplot::plot_grid(plot.page5, plot.page5.nottransformed, nrow = 2) ##just not good
+```
+```{r}
+suppressWarnings(print(plot.page5))  
+suppressWarnings(print(plot.page5.nottransformed)) 
+suppressWarnings(print(plot.page5.nottransformed.focused)) 
+```
+
+the kappa value
+
+```{r}
+Sem1_to <- c("Sem 2", "Sem 3", "Sem 4")
+kappa_value <- c(0.64, 0.70, 0.67)
+t(data.frame(Sem1_to, kappa_value))
+stargazer(t(data.frame(Sem1_to, kappa_value)))
+```
+
+Correlation alc mj
+```{r, echo = FALSE}
+cor(data.file.long$Avg_Drinks_current, data.file.long$Avg_MJ_current, use = "pairwise.complete.obs")
+cor(data.file.long$LOG_Avg_Drinks_current, data.file.long$LOG_Avg_MJ_current, use = "pairwise.complete.obs")
+```
+
+NIAAA guideline source for high alcohol consumption
+```{r "NIAAA guideline source", echo = FALSE} 
+#https://www.niaaa.nih.gov/alcohol-health/overview-alcohol-consumption/moderate-binge-drinking#:~:text=Heavy%20Alcohol%20Use%3A&text=For%20men%2C%20consuming%20five%20or,or%20more%20drinks%20per%20week 
+``` 
+
+
+The alcohol plots 
+
+```{r}
+plot.alcgpa2<-  ggplot(data = data.file.long, aes(x=Avg_Drinks_current, y=GPA, colour = Cluster_current)) +
+  geom_point(alpha = 0.15) + geom_smooth(aes(group = 1), color = "black") + ylim(0, 4.5) + xlim(0, 125) + facet_wrap(~Semester, scales = "free") +
+  labs(x="Average Number of Drinks per Month (not transformed)" , y="GPA") + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw()
+
+plot.alcgpa.outliers2<-  ggplot(data = data.file.long, aes(x=Avg_Drinks_current, y=GPA, colour = Cluster_current)) +
+  geom_point(alpha = 1) + ylim(0, 4.5) + xlim(125,350) + facet_wrap(~Semester, scales = "free") +
+  labs(x="Average Number of Drinks per Month (not transformed)" , y="GPA") + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw()
+```
+
+```{r}
+suppressWarnings(print(plot.alcgpa2))
+suppressWarnings(print(plot.alcgpa.outliers2))
+
+```
+
+outlier data 
+
+```{r, echo = FALSE, include=FALSE}
+data.file.long %>% filter(Avg_Drinks_current > 150) %>% select(Cluster_SEM1, Cluster_current, Avg_Drinks_current, Avg_MJ_current, sum.GPAna, BARCS_ID) %>% group_by(BARCS_ID)
+
+data.file.long %>% filter(Avg_Drinks_current > 125) %>% select(Cluster_SEM1, Cluster_current, Avg_Drinks_current, Avg_MJ_current, sum.GPAna, BARCS_ID) %>% group_by(BARCS_ID)
+
+dim(data.file.long %>% filter(GPA <= 1.0))
+
+table(data.file.long$transition_current)
+```
+
+
+The marijuana plot
+
+
+```{r}
+plot.MJGPA<-  ggplot(data = data.file.long, aes(x=Avg_MJ_current, y=GPA, colour = Cluster_current)) +
+  geom_point(alpha = 0.15) + geom_smooth(aes(group = 1), color = "black") + ylim(0, 4.5) + facet_wrap(~Semester, scales = "free") +
+  labs(x="Marijuana consumption during Semester" , y="GPA") + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw()
+```
+```{r}
+suppressWarnings(print(plot.MJGPA))
+```
+
+
+For the missing data
+
+
+```{r}
+table(data.file.long$sum.GPAna)
+data.file.long %>% group_by(Semester) %>% summarise(MeanGPA = mean(GPA, na.rm = TRUE)) %>% 
+  pivot_wider(names_from = Semester, values_from = MeanGPA, names_prefix = "Semester ")
+data.file.long %>% group_by(Semester, sum.GPAna) %>% 
+  summarise(MeanGPA = mean(GPA, na.rm = TRUE), .groups = 'drop') #%>% 
+  # pivot_wider(names_from = c(Semester, sum.GPAna), values_from = MeanGPA, names_prefix = "Semester ", names_sep = "missing")
+data.file.long %>% group_by(Semester, Cluster_SEM1) %>% 
+  summarise(missing_GPA = sum(is.na(GPA)), .groups = 'drop') #%>%
+  # pivot_wider(names_from = c(Semester, Cluster_SEM1), values_from = missing_GPA, names_prefix = "Semester ", names_sep = "missing")
+```
+
+Note: I changed the data in the table to percentages by hand. 
+
+
+
+

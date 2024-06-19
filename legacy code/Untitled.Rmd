@@ -1,0 +1,1089 @@
+---
+title: "descriptive"
+author: "Colin Linke"
+date: "2024-04-12"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+basics of the data
+
+```{r "intro"}
+rm(list=ls())
+# remotes::install_github("JanMarvin/readspss")
+# 
+# library(readspss)
+# data.file <- read.sav("BARCS_Data_used_for_paper.sav")
+library(tidyverse) 
+library(readspss) 
+data.file <- read.sav("BARCS_Data_used_for_paper.sav")
+dim(data.file)
+head(data.file)
+summary(data.file)
+length(unique(data.file$BARCS_ID))
+
+length(unique(data.file$BARCS_ID))*4 == dim(data.file)[[1]]
+
+colnames(data.file) 
+#View(data.file)
+
+data.sem1 <- data.file %>% filter(Semester == 1)
+data.sem2 <- data.file %>% filter(Semester == 2)
+data.sem3 <- data.file %>% filter(Semester == 3)
+data.sem4 <- data.file %>% filter(Semester == 4)
+
+
+#df.list <- c(data.sem1, data.sem2, data.sem3, data.sem4)
+
+
+variable.list <- list(c(colnames(data.file)[which(colnames(data.file)=="LOG_Avg_Drinks_SEM1"):which(colnames(data.file)=="LOG_Avg_Drinks_SEM4")]),
+                      c(colnames(data.file)[which(colnames(data.file)=="LOG_Avg_MJ_SEM1"):which(colnames(data.file)=="LOG_Avg_MJ_SEM4")]),
+                      c(colnames(data.file)[which(colnames(data.file)=="Cluster_SEM1"):which(colnames(data.file)=="Cluster_SEM4")]),
+                      c(colnames(data.file)[which(colnames(data.file)=="Log_B30_Sem1"):which(colnames(data.file)=="Log_B30_Sem4")]))
+                      
+variable.list
+
+data.SEM1 <- data.sem1 %>% mutate(LOG_Avg_Drinks_current =  LOG_Avg_Drinks_SEM1, 
+                                  LOG_Avg_MJ_current = LOG_Avg_MJ_SEM1,
+                                  Cluster_current = Cluster_SEM1,
+                                  Log_B30_current = Log_B30_Sem1)  #%>% select(-unlist(variable.list))
+data.SEM2 <- data.sem2 %>% mutate(LOG_Avg_Drinks_current =  LOG_Avg_Drinks_SEM2, 
+                                  LOG_Avg_MJ_current = LOG_Avg_MJ_SEM2,
+                                  Cluster_current = Cluster_SEM2,
+                                  Log_B30_current = Log_B30_Sem2)  #%>% select(-unlist(variable.list))
+data.SEM3 <- data.sem3 %>% mutate(LOG_Avg_Drinks_current =  LOG_Avg_Drinks_SEM3, 
+                                  LOG_Avg_MJ_current = LOG_Avg_MJ_SEM3,
+                                  Cluster_current = Cluster_SEM3,
+                                  Log_B30_current = Log_B30_Sem3) #%>% select(-unlist(variable.list))
+data.SEM4 <- data.sem4 %>% mutate(LOG_Avg_Drinks_current =  LOG_Avg_Drinks_SEM4, 
+                                  LOG_Avg_MJ_current = LOG_Avg_MJ_SEM4,
+                                  Cluster_current = Cluster_SEM4,
+                                  Log_B30_current = Log_B30_Sem4) #%>% select(-unlist(variable.list))
+
+data.file.long <- rbind(data.SEM1, data.SEM2, data.SEM3, data.SEM4)
+
+all(data.file.long$GPA %in% data.file$GPA)
+all(data.file$GPA %in% data.file.long$GPA)
+all(data.file$LOG_Avg_Drinks_SEM1 %in% data.file.long$LOG_Avg_Drinks_current)
+all(data.file$LOG_Avg_Drinks_SEM2 %in% data.file.long$LOG_Avg_Drinks_current)
+all(data.file$LOG_Avg_Drinks_SEM3 %in% data.file.long$LOG_Avg_Drinks_current)
+all(data.file$LOG_Avg_Drinks_SEM4 %in% data.file.long$LOG_Avg_Drinks_current)
+
+# for(i in seq_along(variable.list)) {
+#     df.list[i] <- df.list[i] %>% mutate(LOG_Avg_Drinks_current = variable.list[1][i], 
+#                                   LOG_Avg_MJ_current = variable.list[2][i],
+#                                   Cluster_current = variable.list[3][i],
+#                                   Log_B30_current = variable.list[4][i]) %>%
+#   select(-unlist(variable.list))
+# }
+
+# data.sem1 <- data.sem1 %>% mutate(LOG_Avg_Drinks_current =  LOG_Avg_Drinks_SEM1, 
+#                                   LOG_Avg_MJ_current = LOG_Avg_MJ_SEM1,
+#                                   Cluster_current = Cluster_SEM1,
+#                                   Log_B30_current = Log_B30_Sem1) %>%
+#   select(-unlist(variable.list))
+
+```
+
+```{r "first tableone graph"}
+library(tableone) ## data description
+variables.tab1 <- c("Semester", "GPA", "LOG_Avg_Drinks_current", "LOG_Avg_MJ_current", "Cluster_current", "Log_B30_current", "SATTotal", "SATMath", "SATVerbal", "SATWriting", "Fager4_binary", "STAI_SELF_Total", "BDI_SELF_Total", "FH_binary", "Sex", "Parental_SES", "Age1stround"
+#                    , "LOG_Avg_Drinks_SEM1","LOG_Avg_Drinks_SEM2",    "LOG_Avg_Drinks_SEM3", "LOG_Avg_Drinks_SEM4", "LOG_Avg_MJ_SEM1", "LOG_Avg_MJ_SEM2", "LOG_Avg_MJ_SEM3",        "LOG_Avg_MJ_SEM4", "Cluster_SEM1","Cluster_SEM2", "Cluster_SEM3", "Cluster_SEM4", "Log_B30_Sem1",           "Log_B30_Sem2", "Log_B30_Sem3", "Log_B30_Sem4", "Group_transition", "Group_transition1", "AllSEM_Pattern"
+)
+catvars.tab1 <- c("Semester", "Sex", "Fager4_binary", "FH_binary", "Age1stround", "Cluster_current","Cluster_SEM1","Cluster_SEM2", "Cluster_SEM3", "Cluster_SEM4", "Group_transition", "Group_transition1")
+tab1 <- CreateTableOne(data = data.file.long, vars = variables.tab1, factorVars = catvars.tab1, )
+tab1
+summary(tab1)
+```
+
+```{r "paper table 1 page 7 with log"}
+## Recreating the table from the paper
+variables.papertable1 <- c("Age1stround", "SATMath", "SATVerbal", "SATWriting", "GPA", "Parental_SES", "STAI_SELF_Total", "BDI_SELF_Total", "LOG_Avg_Drinks_SEM1", "Log_B30_Sem1", "LOG_Avg_MJ_SEM1", "Sex", "Fager4_binary", "FH_binary") 
+catvars.papertable1 <- c("Sex", "Fager4_binary", "FH_binary")
+paper.table1 <- CreateTableOne(data = data.sem1, vars = variables.papertable1, catvars.papertable1, strata = "Cluster_SEM1", includeNA = TRUE)
+
+paper.table1
+summary(paper.table1)
+
+## frequency is not replicated here. I'm unsure how they did that 
+```
+
+Further Transformation for differences, reverting the logarithmic data back to normal, standardization and mean 
+```{r further data transformations}
+data.file.long <- data.file.long %>%
+  mutate(Avg_Drinks_SEM1 = 10^(LOG_Avg_Drinks_SEM1) -1,
+         Avg_Drinks_SEM2 = 10^(LOG_Avg_Drinks_SEM2) -1,
+         Avg_Drinks_SEM3 = 10^(LOG_Avg_Drinks_SEM3) -1,
+         Avg_Drinks_SEM4 = 10^(LOG_Avg_Drinks_SEM4) -1,
+         Avg_Drinks_current = 10^(LOG_Avg_Drinks_current) -1,
+         Avg_MJ_SEM1 = 10^(LOG_Avg_MJ_SEM1) -1,
+         Avg_MJ_SEM2 = 10^(LOG_Avg_MJ_SEM2) -1,
+         Avg_MJ_SEM3 = 10^(LOG_Avg_MJ_SEM3) -1,
+         Avg_MJ_SEM4 = 10^(LOG_Avg_MJ_SEM4) -1,
+         Avg_MJ_current = 10^(LOG_Avg_MJ_current) -1,
+         B30_SEM1 = 10^(Log_B30_Sem1) -1,
+         B30_SEM2 = 10^(Log_B30_Sem2) -1,
+         B30_SEM3 = 10^(Log_B30_Sem3) -1,
+         B30_SEM4 = 10^(Log_B30_Sem4) -1,
+         B30_current = 10^(Log_B30_current) -1
+         )
+
+### needs some work
+data.file.long <- data.file.long %>%
+  group_by(BARCS_ID) %>%
+  mutate(diff_Avg_Drinks_current = Avg_Drinks_current - lag(Avg_Drinks_current, 1),
+         diff_Avg_MJ_current = Avg_MJ_current - lag(Avg_MJ_current, 1),
+         diff_B30_current = B30_current - lag(B30_current, 1),
+         diff_LOG_Avg_Drinks_current = LOG_Avg_Drinks_current - lag(LOG_Avg_Drinks_current, 1),
+         diff_LOG_Avg_MJ_current = LOG_Avg_MJ_current - lag(LOG_Avg_MJ_current, 1),
+         diff_GPA = GPA - lag(GPA, 1),
+         diff_LOG_B30_current = Log_B30_current - lag(Log_B30_current, 1) #,
+         # logged_difference_Drinksc = log(diff_Avg_Drinks_current),
+         # logged_difference_MJc = log(diff_Avg_MJ_current),
+         # logged_difference_B30c = log(diff_B30_current). ### doesnt make sense, values include negatives
+         )
+
+data.file.long <- data.file.long %>%
+  ungroup() %>%
+  group_by(Semester) %>%
+  mutate(mean_Avg_Drinks = Avg_Drinks_current - mean(Avg_Drinks_current),
+         std_Avg_Drinks = mean_Avg_Drinks / sd(Avg_Drinks_current),
+         mean_LOG_Avg_Drinks = LOG_Avg_Drinks_current - mean(LOG_Avg_Drinks_current),
+         std_LOG_Avg_Drinks = mean_LOG_Avg_Drinks / sd(LOG_Avg_Drinks_current),
+         mean_Avg_MJ = Avg_MJ_current - mean(Avg_MJ_current, na.rm = TRUE),
+         std_Avg_MJ = mean_Avg_MJ / sd(Avg_MJ_current, na.rm = TRUE),
+         mean_LOG_Avg_MJ = LOG_Avg_MJ_current - mean(LOG_Avg_MJ_current, na.rm = TRUE),
+         std_LOG_Avg_MJ = mean_LOG_Avg_MJ / sd(LOG_Avg_MJ_current, na.rm = TRUE),
+         mean_B30 = B30_current - mean(B30_current),
+         std_B30 = mean_B30 / sd(B30_current),
+         mean_LOG_B30 = Log_B30_current - mean(Log_B30_current),
+         std_LOG_B30 = mean_LOG_B30 / sd(Log_B30_current)#,
+         # mean_GPA = GPA - mean(GPA),
+         # std_GPA = mean_GPA / sd(GPA) there are NA's in the data that were wrongly assigned the value 0
+         )
+
+data.file.long <- data.file.long %>%
+  relocate(BARCS_ID, Semester, GPA, diff_GPA, Avg_Drinks_current, mean_Avg_Drinks, std_Avg_Drinks, diff_Avg_Drinks_current, LOG_Avg_Drinks_current, mean_LOG_Avg_Drinks, std_LOG_Avg_Drinks, diff_LOG_Avg_Drinks_current, Avg_MJ_current, mean_Avg_MJ, std_Avg_MJ, diff_Avg_MJ_current, LOG_Avg_MJ_current, mean_LOG_Avg_MJ, std_LOG_Avg_MJ, diff_LOG_Avg_MJ_current)
+
+# View(data.file.long)
+
+## for whatever reason the mean and std for bothe the MJ and GPA variables dont work
+```
+
+```{r paper table page 7 with exp}
+variables.papertable2 <- c("Age1stround", "SATMath", "SATVerbal", "SATWriting", "GPA", "Parental_SES", "STAI_SELF_Total", "BDI_SELF_Total", "Avg_Drinks_SEM1", "B30_Sem1", "Avg_MJ_SEM1", "Sex", "Fager4_binary", "FH_binary") 
+catvars.papertable2 <- c("Sex", "Fager4_binary", "FH_binary")
+paper.table2 <- CreateTableOne(data = (data.file.long %>% filter(Semester == 1)), vars = variables.papertable2, catvars.papertable2, strata = "Cluster_SEM1", includeNA = TRUE)
+
+paper.table2
+summary(paper.table2)
+```
+
+
+general histograms / plots for secondary variables
+
+```{r "finding-individuals-with-at-least-one-GPA=0"}
+data.file.long <- data.file.long %>% group_by(BARCS_ID) %>% arrange(Semester, .by_group = TRUE)
+ind.gpa0 <- data.file.long %>% ungroup() %>% filter(GPA == 0) %>% select(BARCS_ID, Semester, GPA)
+ind.gpa0.vector <- unique(ind.gpa0$BARCS_ID)
+ind.gpa0 <- data.file.long %>% filter(BARCS_ID %in% ind.gpa0.vector) %>% group_by(BARCS_ID, Semester)
+#View(ind.gpa0)
+```
+
+```{r "ggplots-GPA0"}
+plot.gpa0 <- ggplot(ind.gpa0, aes(x = Semester, y = GPA, group = BARCS_ID, col = BARCS_ID)) + 
+  geom_line(alpha = .5)
+plot.gpa0
+```
+seems to be mostly /only NAs
+
+```{r "SAT 0"}
+data.file.long <- data.file.long %>% group_by(BARCS_ID) %>% arrange(Semester, .by_group = TRUE)
+ind.sat0 <- data.file.long %>% ungroup() %>% filter(SATTotal == 0) %>% select(BARCS_ID, Semester, SATTotal, GPA)
+ind.sat0
+plot(ind.sat0$GPA, ind.sat0$SATTotal)
+``` 
+also seemingly all NAs
+
+
+```{r "impute NAs on SAT = 0 &/or GPA = 0"}
+data.file.long <- data.file.long %>% mutate(GPA = replace(GPA, GPA == 0, NA),
+                                            SATTotal = replace(SATTotal, SATTotal == 0, NA),
+                                            SATMath = replace(SATMath, SATMath == 0, NA),
+                                            SATVerbal = replace(SATVerbal, SATVerbal == 0, NA),
+                                            SATWriting = replace(SATWriting, SATWriting == 0, NA),
+                                            mean_GPA = GPA - mean(GPA, na.rm = TRUE),
+                                            std_GPA = mean_GPA / sd(GPA, na.rm = TRUE))
+```
+
+
+```{r "further gg plots"}
+plot.clugpa1 <- ggplot(data.file.long, aes(x = Semester, y = GPA, group = BARCS_ID, col = Cluster_current, na.rm = TRUE)) +
+  geom_line(alpha = .1) 
+# plot.clugpa2 <- ggplot(I(data.file.long %>% ungroup()), aes(x = Semester, y = GPA, group = Cluster_current, col= Cluster_current, na.rm = TRUE)) +
+#   geom_point() 
+plot.clugpa1
+# plot.clugpa2
+
+```
+
+```{r "count NA GPA"}
+data.file.long <- data.file.long %>% group_by(BARCS_ID) %>% 
+  mutate(sum.GPAna = sum(is.na(GPA)))
+# View(data.file.long)
+table(data.file.long$sum.GPAna)
+data.file.long <- data.file.long %>% group_by(BARCS_ID, sum.GPAna)
+```
+
+```{r "saccterplot page 5"}
+data.file.long <- data.file.long %>% mutate(Cluster_current = as.factor(Cluster_current),
+                                  BARCS_ID = as.factor(BARCS_ID))
+cluster.colors <- c('1' = "blue", '2' = "green", '3' = "red")
+cluster.title <- "Cluster"
+plot.page5 <- ggplot(data.file.long, 
+                     aes(x = LOG_Avg_MJ_current, y = LOG_Avg_Drinks_current, col = Cluster_current)) + 
+  geom_point() +
+  xlab("Average Monthly MJ / Cannabis Use (Log10 Transformed)") +
+  ylab("Average Number of Drinks per Month (Log10 Transformed)") +
+  labs(colour = "cluster") +
+  ggtitle("Semester") +
+  scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +
+  facet_wrap(~ Semester)
+  
+plot.page5
+
+plot.page5.alpha <- ggplot(data.file.long, 
+                     aes(x = LOG_Avg_MJ_current, y = LOG_Avg_Drinks_current, col = Cluster_current)) + 
+  geom_point(alpha = 0.1) +
+  xlab("Average Monthly MJ / Cannabis Use (Log10 Transformed)") +
+  ylab("Average Number of Drinks per Month (Log10 Transformed)") +
+  labs(colour = "cluster") +
+  ggtitle("Semester") +
+  scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +
+  facet_wrap(~ Semester)
+plot.page5.alpha
+## center title, make it a row and add number of Observations 
+                       
+```
+```{r "using normal Alc / MJ variables scatterplot"}
+plot.page5alternative <- ggplot(data.file.long, 
+                     aes(x = Avg_MJ_current, y = Avg_Drinks_current, col = Cluster_current)) + 
+  geom_point() + ylim(0, 20) +
+  xlab("Average Monthly MJ / Cannabis Use (not transformed)") +
+  ylab("Average Number of Drinks per Month (not transformed)") +
+  labs(colour = "cluster") +
+  ggtitle("Semester") +
+  scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +
+  facet_wrap(~ Semester)
+  
+plot.page5alternative
+
+
+plot.page5alternative.alpha <- ggplot(data.file.long, 
+                     aes(x = Avg_MJ_current, y = Avg_Drinks_current, col = Cluster_current)) + 
+  geom_point(alpha = 0.1) +
+  xlab("Average Monthly MJ / Cannabis Use (not transformed)") +
+  ylab("Average Number of Drinks per Month (not transformed)") +
+  labs(colour = "cluster") +
+  ggtitle("Semester") +
+  scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +
+  facet_wrap(~ Semester)
+  
+plot.page5alternative.alpha
+
+```
+
+
+```{r "proto 'proper' graphs 1 various GPA variables"}
+library(ggiraph)
+test.data <- data.file.long[1:80,]
+test.data
+testplot.spaghetti <- ggplot(test.data, aes(x = Semester, y = GPA, group = BARCS_ID, col = Cluster_current)) +
+  geom_line() + facet_wrap(~Cluster_SEM1)
+testplot.spaghetti
+
+testplot.spaghetti2 <- ggplot(test.data, aes(x = Semester, y = diff_GPA, group = BARCS_ID, col = Cluster_current)) + 
+  geom_line() + facet_wrap(~Cluster_SEM1)
+testplot.spaghetti2
+
+testplot.spaghetti3 <- ggplot(test.data, aes(x = Semester, y = mean_GPA, group = BARCS_ID, col = Cluster_current)) + geom_line() + facet_wrap(~Cluster_SEM1)
+testplot.spaghetti3
+
+testplot.spaghetti4 <- ggplot(test.data, aes(x = Semester, y = std_GPA, group = BARCS_ID, col = Cluster_current)) + geom_line() + facet_wrap(~Cluster_SEM1)
+testplot.spaghetti4
+
+library(cowplot)
+cowplot::plot_grid(testplot.spaghetti, testplot.spaghetti2, testplot.spaghetti3, testplot.spaghetti4, nrow = 4)
+```
+
+
+```{r "various GPA variables plots solo"}
+library(ggiraph)
+gpa.spaghetti <- ggplot(data.file.long %>% filter(!is.na(Cluster_SEM1)), aes(x = Semester, y = GPA, group = BARCS_ID, col = Cluster_current)) +
+  geom_point(alpha = 0.1) + 
+  geom_line(alpha = 0.1) +
+  facet_wrap(~Cluster_SEM1) + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() 
+gpa.spaghetti
+
+gpa.spaghetti.diff <- ggplot(data.file.long %>% filter(!is.na(Cluster_SEM1)), aes(x = Semester, y = diff_GPA, group = BARCS_ID, col = Cluster_current)) +
+  geom_point(alpha = 0.1) + 
+  geom_line(alpha = 0.1) +
+  facet_wrap(~Cluster_SEM1) + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() 
+gpa.spaghetti.diff
+
+gpa.spaghetti.mean <- ggplot(data.file.long %>% filter(!is.na(Cluster_SEM1)), aes(x = Semester, y = mean_GPA, group = BARCS_ID, col = Cluster_current)) +
+  geom_point(alpha = 0.1) + 
+  geom_line(alpha = 0.1) +
+  facet_wrap(~Cluster_SEM1) + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() 
+gpa.spaghetti.mean
+
+gpa.spaghetti.std <- ggplot(data.file.long %>% filter(!is.na(Cluster_SEM1)), aes(x = Semester, y = std_GPA, group = BARCS_ID, col = Cluster_current)) +
+  geom_point(alpha = 0.1) + 
+  geom_line(alpha = 0.1) +
+  facet_wrap(~Cluster_SEM1) + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() 
+gpa.spaghetti.std
+
+library(cowplot)
+cowplot.gpa <- cowplot::plot_grid(gpa.spaghetti, gpa.spaghetti.diff, gpa.spaghetti.mean, gpa.spaghetti.std, nrow = 4)
+cowplot.gpa
+```
+
+```{r "various Alcohol variables plots solo"}
+alc.spaghetti <- ggplot(data.file.long %>% filter(!is.na(Cluster_SEM1)), aes(x = Semester, y = Avg_Drinks_current, group = BARCS_ID, col = Cluster_current)) +
+  geom_point(alpha = 0.05) + 
+  geom_line(alpha = 0.05) +
+  facet_wrap(~Cluster_SEM1) + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() 
+
+alc.spaghetti.diff <- ggplot(data.file.long %>% filter(!is.na(Cluster_SEM1)), aes(x = Semester, y = diff_Avg_Drinks_current, group = BARCS_ID, col = Cluster_current)) +
+  geom_point(alpha = 0.05) + 
+  geom_line(alpha = 0.05) + ylim(-200,200) +
+  facet_wrap(~Cluster_SEM1) + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() 
+
+alc.spaghetti.mean <- ggplot(data.file.long %>% filter(!is.na(Cluster_SEM1)), aes(x = Semester, y = mean_Avg_Drinks, group = BARCS_ID, col = Cluster_current)) +
+  geom_point(alpha = 0.05) + 
+  geom_line(alpha = 0.05) + ylim(-50, 200) +
+  facet_wrap(~Cluster_SEM1) + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() 
+
+alc.spaghetti.std <- ggplot(data.file.long %>% filter(!is.na(Cluster_SEM1)), aes(x = Semester, y = std_Avg_Drinks, group = BARCS_ID, col = Cluster_current)) +
+  geom_point(alpha = 0.05) + 
+  geom_line(alpha = 0.05) +
+  facet_wrap(~Cluster_SEM1) + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() 
+
+log.alc.spaghetti <- ggplot(data.file.long %>% filter(!is.na(Cluster_SEM1)), aes(x = Semester, y = LOG_Avg_Drinks_current, group = BARCS_ID, col = Cluster_current)) +
+  geom_point(alpha = 0.1) + 
+  geom_line(alpha = 0.1) +
+  facet_wrap(~Cluster_SEM1) + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() 
+
+log.alc.spaghetti.diff <- ggplot(data.file.long %>% filter(!is.na(Cluster_SEM1)), aes(x = Semester, y = diff_LOG_Avg_Drinks_current, group = BARCS_ID, col = Cluster_current)) +
+  geom_point(alpha = 0.1) + 
+  geom_line(alpha = 0.1) +
+  facet_wrap(~Cluster_SEM1) + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() 
+
+log.alc.spaghetti.mean <- ggplot(data.file.long %>% filter(!is.na(Cluster_SEM1)), aes(x = Semester, y = mean_LOG_Avg_Drinks, group = BARCS_ID, col = Cluster_current)) +
+  geom_point(alpha = 0.1) + 
+  geom_line(alpha = 0.1) +
+  facet_wrap(~Cluster_SEM1) + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() 
+
+log.alc.spaghetti.std <- ggplot(data.file.long %>% filter(!is.na(Cluster_SEM1)), aes(x = Semester, y = std_LOG_Avg_Drinks, group = BARCS_ID, col = Cluster_current)) +
+  geom_point(alpha = 0.1) + 
+  geom_line(alpha = 0.1) +
+  facet_wrap(~Cluster_SEM1) + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() 
+
+alc.spaghetti
+alc.spaghetti.diff
+alc.spaghetti.mean
+alc.spaghetti.std
+cowplot.alc <- cowplot::plot_grid(alc.spaghetti, alc.spaghetti.diff, alc.spaghetti.mean, alc.spaghetti.std, nrow = 4)
+cowplot.alc
+
+log.alc.spaghetti
+log.alc.spaghetti.diff
+log.alc.spaghetti.mean
+log.alc.spaghetti.std
+cowplot.log.alc <- cowplot::plot_grid(log.alc.spaghetti, log.alc.spaghetti.diff, log.alc.spaghetti.mean, log.alc.spaghetti.std, nrow = 4)
+cowplot.log.alc
+```
+
+```{r "various MJ variables plots solo"}
+mj.spaghetti <- ggplot(data.file.long %>% filter(!is.na(Cluster_SEM1)), aes(x = Semester, y = Avg_MJ_current, group = BARCS_ID, col = Cluster_current)) +
+  geom_point(alpha = 0.05) + 
+  geom_line(alpha = 0.05) +
+  facet_wrap(~Cluster_SEM1) + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() 
+
+mj.spaghetti.diff <- ggplot(data.file.long %>% filter(!is.na(Cluster_SEM1)), aes(x = Semester, y = diff_Avg_MJ_current, group = BARCS_ID, col = Cluster_current)) +
+  geom_point(alpha = 0.05) + 
+  geom_line(alpha = 0.05) + 
+  facet_wrap(~Cluster_SEM1) + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() 
+
+mj.spaghetti.mean <- ggplot(data.file.long %>% filter(!is.na(Cluster_SEM1)), aes(x = Semester, y = mean_Avg_MJ, group = BARCS_ID, col = Cluster_current)) +
+  geom_point(alpha = 0.05) + 
+  geom_line(alpha = 0.05) + 
+  facet_wrap(~Cluster_SEM1) + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() 
+
+mj.spaghetti.std <- ggplot(data.file.long %>% filter(!is.na(Cluster_SEM1)), aes(x = Semester, y = std_Avg_MJ, group = BARCS_ID, col = Cluster_current)) +
+  geom_point(alpha = 0.05) + 
+  geom_line(alpha = 0.05) +
+  facet_wrap(~Cluster_SEM1) + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() 
+
+log.mj.spaghetti <- ggplot(data.file.long %>% filter(!is.na(Cluster_SEM1)), aes(x = Semester, y = LOG_Avg_MJ_current, group = BARCS_ID, col = Cluster_current)) +
+  geom_point(alpha = 0.1) + 
+  geom_line(alpha = 0.1) +
+  facet_wrap(~Cluster_SEM1) + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() 
+
+log.mj.spaghetti.diff <- ggplot(data.file.long %>% filter(!is.na(Cluster_SEM1)), aes(x = Semester, y = diff_LOG_Avg_MJ_current, group = BARCS_ID, col = Cluster_current)) +
+  geom_point(alpha = 0.1) + 
+  geom_line(alpha = 0.1) +
+  facet_wrap(~Cluster_SEM1) + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() 
+
+log.mj.spaghetti.mean <- ggplot(data.file.long %>% filter(!is.na(Cluster_SEM1)), aes(x = Semester, y = mean_LOG_Avg_MJ, group = BARCS_ID, col = Cluster_current)) +
+  geom_point(alpha = 0.1) + 
+  geom_line(alpha = 0.1) +
+  facet_wrap(~Cluster_SEM1) + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() 
+
+log.mj.spaghetti.std <- ggplot(data.file.long %>% filter(!is.na(Cluster_SEM1)), aes(x = Semester, y = std_LOG_Avg_MJ, group = BARCS_ID, col = Cluster_current)) +
+  geom_point(alpha = 0.1) + 
+  geom_line(alpha = 0.1) +
+  facet_wrap(~Cluster_SEM1) + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() 
+
+mj.spaghetti
+mj.spaghetti.diff
+mj.spaghetti.mean
+mj.spaghetti.std
+cowplot.mj <- cowplot::plot_grid(mj.spaghetti, mj.spaghetti.diff, mj.spaghetti.mean, mj.spaghetti.std, nrow = 4)
+cowplot.mj
+
+log.mj.spaghetti
+log.mj.spaghetti.diff
+log.mj.spaghetti.mean
+log.mj.spaghetti.std
+cowplot.log.mj <- cowplot::plot_grid(log.mj.spaghetti, log.mj.spaghetti.diff, log.mj.spaghetti.mean, log.mj.spaghetti.std, nrow = 4)
+cowplot.log.mj
+```
+
+
+
+```{r "proto plots 2 lasagne plot"}
+
+test.data <- test.data %>% group_by(BARCS_ID) %>% mutate(average_GPA = mean(GPA))
+test.data <- test.data %>% arrange(sum.GPAna, average_GPA)
+
+library(ggiraph)
+test.data <- test.data %>% mutate(BARCS_ID = as.factor(BARCS_ID))
+test.data.lasagna.tooltip <- 
+  ggplot(test.data, aes(x = Semester, y = BARCS_ID, fill = GPA)) + 
+  geom_tile_interactive(aes(tooltip = GPA), #<-- !!
+                        colour = 'transparent') +
+  scale_fill_viridis_c("GPA", option = "C") +
+facet_wrap(sum.GPAna ~ Cluster_SEM1, scales = "free") + ## scales = "free" distorts size of student id within the facets
+  ylab("Student ID") +
+  xlab("Semester") + 
+  labs(caption = "Something") + 
+  theme(legend.position = "bottom")
+
+test.data.lasagna.tooltip
+```
+
+```{r "alcohol gpa plots"}
+plot.log.alcgpa <- ggplot(subset(subset(data.file.long, !is.na(Cluster_SEM1)) , sum.GPAna != 4), aes(x = LOG_Avg_Drinks_current, y = GPA, colour = Cluster_current)) +
+  geom_point(alpha = 0.3) + geom_smooth()  +
+  ylim(0, 4.5) + ylab("GPA in the given Semester") +
+  xlab("Average Number of Drinks per Month (log10 transformed)") +
+  labs(colour = "current Cluster") +
+  ggtitle("Log10 Alcohol consumption & GPA given original Cluster specification") + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +
+  facet_grid(Cluster_SEM1 ~ Semester, scales = "free")
+suppressWarnings(print(plot.log.alcgpa))
+
+plot.alcgpa <- ggplot(subset(subset(data.file.long, !is.na(Cluster_SEM1)) , sum.GPAna != 4), aes(x = Avg_Drinks_current, y = GPA, colour = Cluster_current)) +
+  geom_point(alpha = 0.5) + geom_smooth()  +
+  ylim(0, 4.5) + xlim(0, 150) + ylab("GPA in the given Semester") +
+  xlab("Average Number of Drinks per Month (not transformed)") +
+  labs(colour = "current Cluster") +
+  ggtitle("Alcohol consumption & GPA given original Cluster specification") + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +
+  facet_grid(Cluster_SEM1 ~ Semester, scales = "free")
+suppressWarnings(print(plot.alcgpa))
+
+plot.alcgpa.outliers <- ggplot(subset(subset(data.file.long, !is.na(Cluster_SEM1)) , sum.GPAna != 4), aes(x = Avg_Drinks_current, y = GPA, colour = Cluster_current)) +
+  geom_point(alpha = 0.5) + geom_smooth()  +
+  ylim(0, 4.5) + xlim(150, 350) + ylab("GPA in the given Semester") +
+  xlab("Average Number of Drinks per Month (not transformed)") +
+  labs(colour = "current Cluster") +
+  ggtitle("Alcohol consumption & GPA given original Cluster specification") + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +
+  facet_grid(Cluster_SEM1 ~ Semester, scales = "free")
+suppressWarnings(print(plot.alcgpa.outliers))
+
+
+plot.log.alcgpa.diff <- ggplot(subset(subset(data.file.long, !is.na(Cluster_SEM1)) , sum.GPAna != 4), aes(x = diff_LOG_Avg_Drinks_current, y = diff_GPA, colour = Cluster_current)) +
+  geom_point(alpha = 0.3) + geom_smooth()  +
+  ylim(0, 4.5) + ylab("GPA change from previous Semester") +
+  xlab("Change in Number of Drinks per Month from previous Semester (log10 transformed)") +
+  labs(colour = "current Cluster") +
+  ggtitle("Log10 change in Alcohol consumption & GPA given original Cluster specification") + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +
+  facet_grid(Cluster_SEM1 ~ Semester, scales = "free")
+suppressWarnings(print(plot.log.alcgpa.diff))
+
+plot.alcgpa.diff <- ggplot(subset(subset(data.file.long, !is.na(Cluster_SEM1)) , sum.GPAna != 4), aes(x = diff_Avg_Drinks_current, y = diff_GPA, colour = Cluster_current)) +
+  geom_point(alpha = 0.5) + geom_smooth()  +
+  ylim(0, 4.5)  + ylab("GPA change from previous Semester") +
+  xlab("Average Number of Drinks per Month (not transformed)") +
+  labs(colour = "current Cluster") +
+  ggtitle("Change in Alcohol consumption & GPA given original Cluster specification") + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +
+  facet_grid(Cluster_SEM1 ~ Semester, scales = "free")
+suppressWarnings(print(plot.alcgpa.diff))
+
+plot.log.alcgpa.mean <- ggplot(subset(subset(data.file.long, !is.na(Cluster_SEM1)) , sum.GPAna != 4), aes(x = mean_LOG_Avg_Drinks, y = diff_GPA, colour = Cluster_current)) +
+  geom_point(alpha = 0.3) + geom_smooth()  +
+  ylim(0, 4.5) + ylab("GPA in the given Semester mean adjusted") +
+  xlab("Number of Drinks per Month mean adjusted (log10 transformed)") +
+  labs(colour = "current Cluster") +
+  ggtitle("Log10 mean adjusted Alcohol consumption & GPA given original Cluster specification") + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +
+  facet_grid(Cluster_SEM1 ~ Semester, scales = "free")
+
+
+plot.alcgpa.mean <- ggplot(subset(subset(data.file.long, !is.na(Cluster_SEM1)) , sum.GPAna != 4), aes(x = mean_Avg_Drinks, y = diff_GPA, colour = Cluster_current)) +
+  geom_point(alpha = 0.5) + geom_smooth()  +
+  ylim(0, 4.5)  + ylab("GPA in the given Semester mean adjusted") +
+  xlab("Average Number of Drinks per Month mean adjusted (not transformed)") +
+  labs(colour = "current Cluster") +
+  ggtitle("mean adjusted Alcohol consumption & GPA given original Cluster specification") + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +
+  facet_grid(Cluster_SEM1 ~ Semester, scales = "free")
+
+plot.log.alcgpa.std <- ggplot(subset(subset(data.file.long, !is.na(Cluster_SEM1)) , sum.GPAna != 4), aes(x = std_LOG_Avg_Drinks, y = diff_GPA, colour = Cluster_current)) +
+  geom_point(alpha = 0.3) + geom_smooth()  +
+  ylim(0, 4.5) + ylab("GPA in the given Semester mean adjusted") +
+  xlab("Number of Drinks per Month mean adjusted (log10 transformed)") +
+  labs(colour = "current Cluster") +
+  ggtitle("Log10 std adjusted Alcohol consumption & GPA given original Cluster specification") + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +
+  facet_grid(Cluster_SEM1 ~ Semester, scales = "free")
+
+
+plot.alcgpa.std <- ggplot(subset(subset(data.file.long, !is.na(Cluster_SEM1)) , sum.GPAna != 4), aes(x = std_Avg_Drinks, y = diff_GPA, colour = Cluster_current)) +
+  geom_point(alpha = 0.5) + geom_smooth()  +
+  ylim(0, 4.5)  + ylab("GPA in the given Semester std adjusted") +
+  xlab("Average Number of Drinks per Month std adjusted (not transformed)") +
+  labs(colour = "current Cluster") +
+  ggtitle("std adjusted Alcohol consumption & GPA given original Cluster specification") + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +
+  facet_grid(Cluster_SEM1 ~ Semester, scales = "free")
+
+
+suppressWarnings(print(plot.log.alcgpa))
+suppressWarnings(print(plot.alcgpa))
+suppressWarnings(print(plot.log.alcgpa.diff))
+suppressWarnings(print(plot.alcgpa.diff))
+suppressWarnings(print(plot.log.alcgpa.mean))
+suppressWarnings(print(plot.alcgpa.mean))
+suppressWarnings(print(plot.log.alcgpa.std))
+suppressWarnings(print(plot.alcgpa.std))
+```
+```{r "mj gpa plots"}
+plot.log.mjgpa <- ggplot(subset(subset(data.file.long, !is.na(Cluster_SEM1)) , sum.GPAna != 4), aes(x = LOG_Avg_MJ_current, y = GPA, colour = Cluster_current)) +
+  geom_point(alpha = 0.05) + geom_smooth()  +
+  ylim(0, 4.5) + ylab("GPA in the given Semester") +
+  xlab("Average times of MJ consumption per Month (log10 transformed)") +
+  labs(colour = "current Cluster") +
+  ggtitle("Log10 MJ consumption & GPA given original Cluster specification") + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +
+  facet_grid(Cluster_SEM1 ~ Semester, scales = "free")
+
+plot.mjgpa <- ggplot(subset(subset(data.file.long, !is.na(Cluster_SEM1)) , sum.GPAna != 4), aes(x = Avg_MJ_current, y = GPA, colour = Cluster_current)) +
+  geom_point(alpha = 0.05) + geom_smooth()  +
+  ylim(0, 4.5) + 
+  ylab("GPA in the given Semester") +
+  xlab("Average times of MJ consumption per Month (not transformed)") +
+  labs(colour = "current Cluster") +
+  ggtitle("MJ consumption & GPA given original Cluster specification") + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +
+  facet_grid(Cluster_SEM1 ~ Semester, scales = "free")
+
+plot.log.mjgpa.diff <- ggplot(subset(subset(data.file.long, !is.na(Cluster_SEM1)) , sum.GPAna != 4), aes(x = diff_LOG_Avg_MJ_current, y = diff_GPA, colour = Cluster_current)) +
+  geom_point(alpha = 0.3) + geom_smooth()  +
+  ylim(-3, 3) + ylab("GPA change from previous Semester") +
+  xlab("Change in MJ consumption per Month from previous Semester (log10 transformed)") +
+  labs(colour = "current Cluster") +
+  ggtitle("Log10 change in MJ consumption & GPA given original Cluster specification") + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +
+  facet_grid(Cluster_SEM1 ~ Semester, scales = "free")
+
+plot.mjgpa.diff <- ggplot(subset(subset(data.file.long, !is.na(Cluster_SEM1)) , sum.GPAna != 4), aes(x = diff_Avg_MJ_current, y = diff_GPA, colour = Cluster_current)) +
+  geom_point(alpha = 0.5) + geom_smooth()  +
+  ylim(-3, 3)  + ylab("GPA change from previous Semester") +
+  xlab("Change in MJ consumption per Month from previous Semester (not transformed)") +
+  labs(colour = "current Cluster") +
+  ggtitle("Change in MJ consumption & GPA given original Cluster specification") + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +
+  facet_grid(Cluster_SEM1 ~ Semester, scales = "free")
+
+plot.log.mjgpa.mean <- ggplot(subset(subset(data.file.long, !is.na(Cluster_SEM1)) , sum.GPAna != 4), aes(x = mean_LOG_Avg_MJ, y = diff_GPA, colour = Cluster_current)) +
+  geom_point(alpha = 0.3) + geom_smooth()  +
+  ylim(-3, 3) + ylab("GPA in the given Semester mean adjusted") +
+  xlab("MJ consumption per Month mean adjusted (log10 transformed)") +
+  labs(colour = "current Cluster") +
+  ggtitle("Log10 mean adjusted MJ consumption & GPA given original Cluster specification") + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +
+  facet_grid(Cluster_SEM1 ~ Semester, scales = "free")
+
+
+plot.mjgpa.mean <- ggplot(subset(subset(data.file.long, !is.na(Cluster_SEM1)) , sum.GPAna != 4), aes(x = mean_Avg_MJ, y = diff_GPA, colour = Cluster_current)) +
+  geom_point(alpha = 0.5) + geom_smooth()  +
+  ylim(-3, 3)  + ylab("GPA in the given Semester mean adjusted") +
+  xlab("MJ consumption per Month mean adjusted (not transformed)") +
+  labs(colour = "current Cluster") +
+  ggtitle("mean adjusted MJ consumption & GPA given original Cluster specification") + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +
+  facet_grid(Cluster_SEM1 ~ Semester, scales = "free")
+
+plot.log.mjgpa.std <- ggplot(subset(subset(data.file.long, !is.na(Cluster_SEM1)) , sum.GPAna != 4), aes(x = std_LOG_Avg_MJ, y = diff_GPA, colour = Cluster_current)) +
+  geom_point(alpha = 0.3) + geom_smooth()  +
+  ylim(-3, 3) + ylab("GPA in the given Semester mean adjusted") +
+  xlab("MJ consumption per Month std adjusted (log10 transformed)") +
+  labs(colour = "current Cluster") +
+  ggtitle("Log10 std adjusted MJ consumption & GPA given original Cluster specification") + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +
+  facet_grid(Cluster_SEM1 ~ Semester, scales = "free")
+
+
+plot.mjgpa.std <- ggplot(subset(subset(data.file.long, !is.na(Cluster_SEM1)) , sum.GPAna != 4), aes(x = std_Avg_MJ, y = diff_GPA, colour = Cluster_current)) +
+  geom_point(alpha = 0.5) + geom_smooth()  +
+  ylim(-3, 3)  + ylab("GPA in the given Semester std adjusted") +
+  xlab("MJ consumption per Monthstd adjusted (not transformed)") +
+  labs(colour = "current Cluster") +
+  ggtitle("std adjusted Alcohol consumption & GPA given original Cluster specification") + scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +
+  facet_grid(Cluster_SEM1 ~ Semester, scales = "free")
+
+
+suppressWarnings(print(plot.log.mjgpa))
+suppressWarnings(print(plot.mjgpa))
+suppressWarnings(print(plot.log.mjgpa.diff))
+suppressWarnings(print(plot.mjgpa.diff))
+suppressWarnings(print(plot.log.mjgpa.mean))
+suppressWarnings(print(plot.mjgpa.mean))
+suppressWarnings(print(plot.log.mjgpa.std))
+suppressWarnings(print(plot.mjgpa.std))
+
+```
+
+
+
+
+```{r "lasagne plot"}
+
+data.file.long <- data.file.long %>% group_by(BARCS_ID) %>% mutate(average_GPA = mean(GPA))
+data.file.long <- data.file.long %>% arrange(sum.GPAna, average_GPA)
+
+library(ggiraph)
+data.file.long <- data.file.long %>% mutate(BARCS_ID = as.factor(BARCS_ID))
+lasagna.plot.tooltip <- 
+  ggplot(data.file.long, aes(x = Semester, y = BARCS_ID, fill = GPA)) + 
+  geom_tile_interactive(aes(tooltip = GPA), #<-- !!
+                        colour = 'transparent') +
+  scale_fill_viridis_c("GPA", option = "C") +
+facet_grid(sum.GPAna ~ Cluster_SEM1, scales = "free_y") + ## scales = "free" distorts widths of student id within the facets
+  ylab("Student ID") +
+  xlab("Semester") + 
+  labs(caption = "Something") + 
+  theme(legend.position = "bottom")
+
+lasagna.plot.tooltip
+```
+
+```{r "lasagne plots GPA for 0 missing GPA data"}
+subset.0nagpas <- data.file.long %>% filter(sum.GPAna == 0) %>% arrange(average_GPA)
+subset.0nagpas <- subset.0nagpas %>% mutate(BARCS_ID = as.character(BARCS_ID))
+
+lasagna.plot.0na <- 
+  ggplot(subset.0nagpas, aes(x = Semester, y = BARCS_ID, fill = GPA)) + 
+  geom_tile_interactive(aes(tooltip = GPA), #<-- !!
+                        colour = 'transparent') +
+  scale_fill_viridis_c("GPA", option = "C", limits = c(0, 4.5)) +
+  facet_wrap(~Cluster_SEM1, scales = "free_y", ncol = 4) + ## scales = "free" distorts widths of student id within the facets
+  ylab("Student ID") +
+  xlab("Semester") + 
+  ggtitle("No missing na lasagne plot GPA given semester and cluster at sem 1") +
+  labs(caption = "Baseline for the cluster separation categorization in Semester 1") + 
+  theme(legend.position = "bottom")
+
+lasagna.plot.0na
+#dim(subset.0nagpas)
+
+library(sjmisc)
+subset.0nagpas <- subset.0nagpas %>% filter(!is.na(Cluster_SEM1)) %>% arrange(average_GPA, BARCS_ID)
+
+
+First.small.lasagna.plot.0na <- 
+  ggplot(subset.0nagpas[1:948,], aes(x = Semester, y = BARCS_ID, fill = GPA)) + 
+  geom_tile_interactive(aes(tooltip = GPA), #<-- !!
+                        colour = 'transparent') +
+  scale_fill_viridis_c("GPA", option = "C", limits = c(0, 4.5)) +
+  facet_wrap(~Cluster_SEM1, scales = "free_y", ncol = 4) + ## scales = "free" distorts widths of student id within the facets
+  ylab("Student ID") +
+  xlab("Semester") + 
+  ggtitle("No missing na lasagne plot GPA given semester and cluster at sem 1, First subset") +
+  labs(caption = "Baseline for the cluster separation categorization in Semester 1") + 
+  theme(legend.position = "bottom")
+
+Second.small.lasagna.plot.0na <- 
+  ggplot(subset.0nagpas[949:1896,], aes(x = Semester, y = BARCS_ID, fill = GPA)) + 
+  geom_tile_interactive(aes(tooltip = GPA), #<-- !!
+                        colour = 'transparent') +
+  scale_fill_viridis_c("GPA", option = "C", limits = c(0, 4.5)) +
+  facet_wrap(~Cluster_SEM1, scales = "free_y", ncol = 4) + ## scales = "free" distorts widths of student id within the facets
+  ylab("Student ID") +
+  xlab("Semester") + 
+  ggtitle("No missing na lasagne plot GPA given semester and cluster at sem 1, Second subset") +
+  labs(caption = "Baseline for the cluster separation categorization in Semester 1") + 
+  theme(legend.position = "bottom")
+
+Third.small.lasagna.plot.0na <- 
+  ggplot(subset.0nagpas[1897:2844,], aes(x = Semester, y = BARCS_ID, fill = GPA)) + 
+  geom_tile_interactive(aes(tooltip = GPA), #<-- !!
+                        colour = 'transparent') +
+  scale_fill_viridis_c("GPA", option = "C", limits = c(0, 4.5)) +
+  facet_wrap(~Cluster_SEM1, scales = "free_y", ncol = 4) + ## scales = "free" distorts widths of student id within the facets
+  ylab("Student ID") +
+  xlab("Semester") + 
+  ggtitle("No missing na lasagne plot GPA given semester and cluster at sem 1, third subset") +
+  labs(caption = "Baseline for the cluster separation categorization in Semester 1") + 
+  theme(legend.position = "bottom")
+
+Fourth.small.lasagna.plot.0na <- 
+  ggplot(subset.0nagpas[-(1:2844),], aes(x = Semester, y = BARCS_ID, fill = GPA)) + 
+  geom_tile_interactive(aes(tooltip = GPA), #<-- !!
+                        colour = 'transparent') +
+  scale_fill_viridis_c("GPA", option = "C", limits = c(0, 4.5)) +
+  facet_wrap(~Cluster_SEM1, scales = "free_y", ncol = 4) + ## scales = "free" distorts widths of student id within the facets
+  ylab("Student ID") +
+  xlab("Semester") + 
+  ggtitle("No missing na lasagne plot GPA given semester and cluster at sem 1, fourth subset") +
+  labs(caption = "Baseline for the cluster separation categorization in Semester 1") + 
+  theme(legend.position = "bottom")
+
+First.small.lasagna.plot.0na
+Second.small.lasagna.plot.0na
+Third.small.lasagna.plot.0na
+Fourth.small.lasagna.plot.0na
+```
+
+```{r "lasagne plots with nas for GPA"}
+subset.1nagpas <- data.file.long %>% filter(sum.GPAna == 1) %>% arrange(average_GPA)
+subset.2nagpas <- data.file.long %>% filter(sum.GPAna == 2) %>% arrange(average_GPA)
+subset.3nagpas <- data.file.long %>% filter(sum.GPAna == 3) %>% arrange(average_GPA)
+
+lasagna.plot.1na <- 
+  ggplot(subset.1nagpas, aes(x = Semester, y = BARCS_ID, fill = GPA)) + 
+  geom_tile_interactive(aes(tooltip = GPA), #<-- !!
+                        colour = 'transparent') +
+  scale_fill_viridis_c("GPA", option = "C", limits = c(0, 4.5)) +
+  facet_wrap(~Cluster_SEM1, scales = "free_y", ncol = 4) + ## scales = "free" distorts widths of student id within the facets
+  ylab("Student ID") +
+  xlab("Semester") + 
+  ggtitle("No missing na lasagne plot GPA given semester and cluster at sem 1") +
+  labs(caption = "Baseline for the cluster separation categorization in Semester 1") + 
+  theme(legend.position = "bottom")
+
+
+lasagna.plot.2na <- 
+  ggplot(subset.2nagpas, aes(x = Semester, y = BARCS_ID, fill = GPA)) + 
+  geom_tile_interactive(aes(tooltip = GPA), #<-- !!
+                        colour = 'transparent') +
+  scale_fill_viridis_c("GPA", option = "C", limits = c(0, 4.5)) +
+  facet_wrap(~Cluster_SEM1, scales = "free_y", ncol = 4) + ## scales = "free" distorts widths of student id within the facets
+  ylab("Student ID") +
+  xlab("Semester") + 
+  ggtitle("No missing na lasagne plot GPA given semester and cluster at sem 1") +
+  labs(caption = "Baseline for the cluster separation categorization in Semester 1") + 
+  theme(legend.position = "bottom")
+
+lasagna.plot.3na <- 
+  ggplot(subset.3nagpas, aes(x = Semester, y = BARCS_ID, fill = GPA)) + 
+  geom_tile_interactive(aes(tooltip = GPA), #<-- !!
+                        colour = 'transparent') +
+  scale_fill_viridis_c("GPA", option = "C", limits = c(0, 4.5)) +
+  facet_wrap(~Cluster_SEM1, scales = "free_y", ncol = 4) + ## scales = "free" distorts widths of student id within the facets
+  ylab("Student ID") +
+  xlab("Semester") + 
+  ggtitle("No missing na lasagne plot GPA given semester and cluster at sem 1") +
+  labs(caption = "Baseline for the cluster separation categorization in Semester 1") + 
+  theme(legend.position = "bottom")
+
+lasagna.plot.1na
+lasagna.plot.2na
+lasagna.plot.3na
+
+data.file.long %>% group_by(Semester) %>% summarise(MeanGPA = mean(GPA, na.rm = TRUE))
+data.file.long %>% group_by(Semester, sum.GPAna) %>% summarise(MeanGPA = mean(GPA, na.rm = TRUE))
+```
+
+
+```{r}
+attach(data.sem1)
+hist(Age1stround) ## age of college students
+hist(Fager4_binary) 
+table(Fager4_binary) ## must be cigarette smoking 
+hist(STAI_SELF_Total)  ## tries to score anxiety, higher scores correlate positively with higher levels of anxiety 
+hist(BDI_SELF_Total)  ## Beck Depression Inventory, scores depression symptoms (higher means more likely)
+hist(FH_binary) ##family history for alcoholism?
+hist(Parental_SES)  ## http://fcon_1000.projects.nitrc.org/indi/enhanced/assessments/ses-child.html 
+
+plot(LOG_Avg_Drinks_SEM1, LOG_Avg_MJ_SEM1)
+plot(LOG_Avg_Drinks_SEM2, LOG_Avg_MJ_SEM2)
+plot(LOG_Avg_Drinks_SEM3, LOG_Avg_MJ_SEM3)
+plot(LOG_Avg_Drinks_SEM4, LOG_Avg_MJ_SEM4)
+
+detach(data.sem1)
+```
+
+GPA over time
+
+```{r}
+#### Old before transformations
+boxplot1.old <- ggplot(data = data.file, aes(x=as.character(Semester), y=GPA)) +
+  geom_boxplot() + ylim(0, 4.5)
+  labs(x="Semester (OLD)" , y="GPA")
+boxplot1.old
+data.file %>% group_by(Semester) %>% summarise(MeanGPA = mean(GPA, na.rm = TRUE))
+# GPA is almost constant
+
+
+
+boxplot1 <- ggplot(data.file.long, aes(x=as.character(Semester), y=GPA)) +
+  geom_boxplot() + ylim(0, 4.5)
+  labs(x="Semester" , y="GPA")
+boxplot1
+data.file.long %>% group_by(Semester) %>% summarise(MeanGPA = mean(GPA, na.rm = TRUE))
+data.file.long %>% group_by(Semester, sum.GPAna) %>% summarise(MeanGPA = mean(GPA, na.rm = TRUE)) #%>% 
+  #spread()
+```
+
+SAT variables and GPA interaction (They are all the same)
+
+```{r}
+data.file %>% filter(Semester == 1) %>% summarise(MeanSATT = mean(SATTotal, na.rm = TRUE), 
+                                                 MeanSATMath = mean(SATMath, na.rm = TRUE),
+                                                 MeanSATVerbal = mean(SATVerbal, na.rm = TRUE),
+                                                 MeanSATWriting = mean(SATWriting, na.rm = TRUE))
+
+boxplot(data.sem1$SATMath,data.sem1$SATWriting, data.sem1$SATVerbal, main = "SAT sections", ylab = "Score", names = c("SAT Math", "SAT Writing", "SAT Verbal"))
+boxplot(data.sem1$SATTotal, main = "SAT combined score", ylab = "score")
+
+plot.SATGPA <- ggplot(data = data.file, aes(x=GPA, y =SATTotal, fill = as.factor(Semester))) +
+  geom_point() +
+  geom_smooth()
+plot.SATGPA + facet_wrap( ~ as.factor(Semester), scales="free")
+
+```
+
+made sure NA's don't interfere
+
+```{r echo=FALSE, results='hide',message=FALSE}
+### old before conversion from 0 to na 
+
+plot.SATGPA2.old <- data.file %>%
+  drop_na(GPA) %>%
+  ggplot(aes(x=SATTotal, y = GPA, fill = as.factor(Semester))) +
+  geom_point() +
+  geom_smooth()
+plot.SATGPA2.old + facet_wrap( ~ as.factor(Semester), scales="free")
+
+
+plot.SATGPA2 <- 
+  ggplot(data.file.long, aes(x=SATTotal, y = GPA, color = Cluster_current)) +
+  geom_point(alpha = 0.3) +
+  geom_smooth() + 
+  scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() +
+  facet_wrap( ~ as.factor(Semester), scales="free")
+suppressWarnings(print(plot.SATGPA2))
+```
+
+Histograms for Gender, Alcohol, MJ, Clusters & GPAs
+
+```{r}
+table(data.sem1$Sex)
+## semester 1
+table(data.sem1$Cluster_SEM1)
+hist(data.sem1$LOG_Avg_Drinks_SEM1)
+hist(data.sem1$LOG_Avg_MJ_SEM1)
+hist(data.sem1$GPA)
+
+## semester 2
+table(data.sem2$Cluster_SEM2)
+hist(data.sem1$LOG_Avg_Drinks_SEM2)
+hist(data.sem1$LOG_Avg_MJ_SEM2)
+hist(data.sem2$GPA)
+
+## semester 3
+table(data.sem3$Cluster_SEM3)
+hist(data.sem1$LOG_Avg_Drinks_SEM3)
+hist(data.sem1$LOG_Avg_MJ_SEM3)
+hist(data.sem3$GPA)
+
+## semester 4
+table(data.sem4$Cluster_SEM4)
+hist(data.sem1$LOG_Avg_Drinks_SEM4)
+hist(data.sem1$LOG_Avg_MJ_SEM4)
+hist(data.sem4$GPA)
+
+
+### Group transitions 
+
+table(data.sem1$Group_transition)  
+hist(data.sem1$Group_transition)
+
+### Group transitions '1' same, but only counts improvements / deteriation 
+
+table(data.sem1$Group_transition1)  
+hist(data.sem1$Group_transition1)
+
+```
+
+Closer look at Clusters and GPAs
+
+```{r GPA old}
+plot.clusterGPAsem1 <-  ggplot(data = data.sem1, aes(x=Cluster_SEM1, y=GPA)) +
+  geom_boxplot() + 
+  labs(x="Cluster Semester 1" , y="GPA")
+plot.clusterGPAsem2 <-  ggplot(data = data.sem2, aes(x=Cluster_SEM2, y=GPA)) +
+  geom_boxplot() + 
+  labs(x="Cluster Semester 2" , y="GPA")
+plot.clusterGPAsem3 <-  ggplot(data = data.sem3, aes(x=Cluster_SEM3, y=GPA)) +
+  geom_boxplot() + 
+  labs(x="Cluster Semester 3" , y="GPA")
+plot.clusterGPAsem4 <-  ggplot(data = data.sem4, aes(x=Cluster_SEM4, y=GPA)) +
+  geom_boxplot() + 
+  labs(x="Cluster Semester 4" , y="GPA")
+
+# par(mfrows = c(2,2))
+plot.clusterGPAsem1
+plot.clusterGPAsem2
+plot.clusterGPAsem3
+plot.clusterGPAsem4
+
+### we can see a clear under performance for cluster 3 compared to cluster 1 and 2
+```
+
+Original cluster assignment are not static to GPA
+
+```{r}
+## boxplot of the changes of GPA assigned to cluster of Sem 1
+##old is before the 0 --> na conversion for GPA
+plot.clusterGPA1.old <- ggplot(data = data.file, aes(x=Cluster_SEM1, y=GPA)) +
+  geom_boxplot(aes(fill=as.factor(Semester))) + 
+  labs(x="Cluster" , y="GPA") + ylim(0, 4.5)
+plot.clusterGPA1.old
+
+plot.cluster.Sem1.GPA1 <- ggplot(data = data.file.long, aes(x=Cluster_SEM1, y=GPA)) +
+  geom_boxplot(aes(fill=as.factor(Semester))) + 
+  labs(x="Cluster during first Semester" , y="GPA") + ylim(0, 4.5) +
+  scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() 
+plot.cluster.Sem1.GPA1
+
+plot.cluster.current.GPA1 <- ggplot(data = data.file.long, aes(x=Cluster_current, y=GPA)) +
+  geom_boxplot(aes(fill=as.factor(Semester))) + 
+  labs(x="Cluster during the Semester" , y="GPA") + ylim(0, 4.5) +
+  scale_colour_manual(values = cluster.colors, na.translate = FALSE) + theme_bw() 
+plot.cluster.current.GPA1
+
+```
+
+```{r}
+
+## differences of the cluster for each semester 
+## old before 0 --> na conversion + fixed cluster from first semester 
+plot.clusterGPA2.old <- ggplot(data = data.file, aes(x=as.factor(Semester), y=GPA)) +
+  geom_boxplot(aes(fill=Cluster_SEM1)) + theme_bw() +
+  labs(x="Semester" , y="GPA")
+plot.clusterGPA2.old
+
+plot.cluster.sem1.GPA2 <- ggplot(data = data.file.long, aes(x=as.factor(Semester), y=GPA)) +
+  geom_boxplot(aes(fill=Cluster_SEM1)) + 
+   scale_fill_manual(values = cluster.colors, na.translate = TRUE) + theme_bw() +
+  labs(x="Semester" , y="GPA")
+plot.cluster.sem1.GPA2
+
+plot.cluster.current.GPA2 <- ggplot(data = data.file.long, aes(x=as.factor(Semester), y=GPA)) +
+  geom_boxplot(aes(fill=Cluster_current)) + 
+  scale_fill_manual(values = cluster.colors, na.translate = TRUE) + theme_bw() +
+  labs(x="Semester" , y="GPA")
+plot.cluster.current.GPA2
+
+```
+
+Alcohol and GPA
+
+```{r}
+
+boxplot(data.sem1$LOG_Avg_Drinks_SEM1,data.sem1$LOG_Avg_Drinks_SEM2, data.sem1$LOG_Avg_Drinks_SEM3, data.sem1$LOG_Avg_Drinks_SEM4, main = "alcohol consumption each Semester (OLD!)", ylab = "", names = c("1. Sem", "2. Sem", "3. Sem", "4. Sem"))
+
+## decrease!
+
+
+plot.alcoholGPAsem1.old <-  ggplot(data = data.sem1, aes(x=LOG_Avg_Drinks_SEM1, y=GPA)) +
+  geom_point() + geom_smooth() +
+  labs(x="alcohol Semester 1 (OLD)" , y="GPA")
+plot.alcoholGPAsem2.old <-  ggplot(data = data.sem2, aes(x=LOG_Avg_Drinks_SEM2, y=GPA)) +
+  geom_point() + geom_smooth() +
+  labs(x="alcohol Semester 2 (OLD)" , y="GPA")
+plot.alcoholGPAsem3.old <-  ggplot(data = data.sem3, aes(x=LOG_Avg_Drinks_SEM3, y=GPA)) +
+  geom_point() + geom_smooth() +
+  labs(x="alcohol Semester 3 (OLD)" , y="GPA")
+plot.alcoholGPAsem4.old <-  ggplot(data = data.sem4, aes(x=LOG_Avg_Drinks_SEM4, y=GPA)) +
+  geom_point() + geom_smooth() +
+  labs(x="alcohol Semester 4 (OLD)" , y="GPA")
+
+# par(mfrows = c(2,2))
+plot.alcoholGPAsem1.old
+plot.alcoholGPAsem2.old
+plot.alcoholGPAsem3.old
+plot.alcoholGPAsem4.old
+
+
+## decrease!
+
+
+plot.log.alcoholGPA <- ggplot(data = data.file.long, aes(x=LOG_Avg_Drinks_current, y=GPA)) +
+  geom_point(alpha = 0.3) + geom_smooth() + ylim(0, 4.5) + facet_wrap(~Semester) +
+  labs(x="Log10 Alcohol consumption per month during Semester" , y="GPA")
+plot.log.alcoholGPA 
+
+
+plot.alcoholGPA <- ggplot(data = data.file.long, aes(x=Avg_Drinks_current, y=GPA)) +
+  geom_point(alpha = 0.3) + geom_smooth() + ylim(0, 4.5) + facet_wrap(~Semester) +
+  labs(x="Alcohol consumption per month during Semester" , y="GPA")
+plot.alcoholGPA 
+# par(mfrows = c(2,2))
+
+
+```
+
+Marijuhana and GPA
+
+```{r}
+
+boxplot(data.sem1$LOG_Avg_MJ_SEM1,data.sem1$LOG_Avg_MJ_SEM2, data.sem1$LOG_Avg_MJ_SEM3, data.sem1$LOG_Avg_MJ_SEM4, main = "MJ consumption each Semester (OLD)", ylab = "", names = c("1. Sem", "2. Sem", "3. Sem", "4. Sem"))
+
+
+
+plot.MJGPAsem1.old <-  ggplot(data = data.sem1, aes(x=LOG_Avg_MJ_SEM1, y=GPA)) +
+  geom_point() + geom_smooth() +
+  labs(x="MJ Semester 1 (OLD)" , y="GPA")
+plot.MJGPAsem2.old <-  ggplot(data = data.sem2, aes(x=LOG_Avg_MJ_SEM2, y=GPA)) +
+  geom_point() + geom_smooth() +
+  labs(x="MJ Semester 2 (OLD)" , y="GPA")
+plot.MJGPAsem3.old <-  ggplot(data = data.sem3, aes(x=LOG_Avg_MJ_SEM3, y=GPA)) +
+  geom_point() + geom_smooth() +
+  labs(x="MJ Semester 3 (OLD)" , y="GPA")
+plot.MJGPAsem4.old <-  ggplot(data = data.sem4, aes(x=LOG_Avg_MJ_SEM4, y=GPA)) +
+  geom_point() + geom_smooth() +
+  labs(x="MJ Semester 4 (OLD)" , y="GPA")
+
+# par(mfrows = c(2,2))
+
+plot.MJGPAsem1.old
+plot.MJGPAsem2.old
+plot.MJGPAsem3.old
+plot.MJGPAsem4.old
+
+
+plot.log.MJGPA<-  ggplot(data = data.file.long, aes(x=LOG_Avg_MJ_current, y=GPA)) +
+  geom_point(alpha = 0.3) + geom_smooth() + ylim(0, 4.5) + facet_wrap(~Semester, scales = "free") +
+  labs(x=" log MJ consumption during Semester" , y="GPA")
+plot.MJGPA<-  ggplot(data = data.file.long, aes(x=Avg_MJ_current, y=GPA)) +
+  geom_point(alpha = 0.3) + geom_smooth() + ylim(0, 4.5) + facet_wrap(~Semester, scales = "free") +
+  labs(x="MJ consumption during Semester" , y="GPA")
+plot.log.MJGPA
+plot.MJGPA
+```

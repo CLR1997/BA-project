@@ -1,0 +1,225 @@
+---
+title: "GAMM"
+author: "Colin Linke"
+date: "2024-06-19"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r splines}
+sm.splines.ni <- gamm(
+  GPA ~ s(Avg_Drinks_current, bs = "ps") + s(Avg_MJ_current, bs = "ps"),
+  data = outlier.removed,
+  na.action = na.exclude,
+  correlation = corARMA(p = 1, q = 1, form = ~ Time | BARCS_ID), method = "ML"
+)
+
+sm.splines.1 <- gamm(
+  GPA ~ te(Avg_Drinks_current, Avg_MJ_current, bs = "ps"),
+  random = list(BARCS_ID = ~ 1),
+  data = outlier.removed,
+  na.action = na.exclude,
+  correlation = corARMA(p = 1, q = 1, form = ~ Time | BARCS_ID), method = "ML"
+)
+
+sm.splines.mix <- gamm(
+  GPA ~ Avg_Drinks_current + s(Avg_MJ_current, bs = "ps"),
+  data = outlier.removed,
+  na.action = na.exclude,
+  correlation = corARMA(p = 1, q = 1, form = ~ Time | BARCS_ID), method = "ML"
+)
+
+sm.splines.mix.2 <- gamm(
+  GPA ~ Avg_MJ_current + s(Avg_Drinks_current, bs = "ps"),
+  data = outlier.removed,
+  na.action = na.exclude,
+  correlation = corARMA(p = 1, q = 1, form = ~ Time | BARCS_ID), method = "ML"
+)
+
+AIC.smspline <- AIC(sm.splines.ni, sm.splines.1, sm.splines.mix, sm.splines.mix.2)
+BIC.smspline <- BIC(sm.splines.ni, sm.splines.1, sm.splines.mix, sm.splines.mix.2)
+
+df.sm.spline <- data.frame(AIC.smspline, BIC.smspline)
+df.sm.spline[,-3]
+
+summary(sm.splines.mix$gam)
+summary(sm.splines.mix$lme)
+plot.gam(sm.splines.mix$gam, all.terms = TRUE)
+fitted.mix <- fitted(sm.splines.mix$lme)
+resid.mix <- resid(sm.splines.mix$lme)
+df.mix <- data.frame(fitted.mix, resid.mix)
+ggplot.mix <- ggplot(df.mix, aes(x = fitted.mix, y = resid.mix)) +
+  geom_point() +
+  geom_smooth() +
+  labs(title = "Residuals vs Fitted values Spline mix", x = "Fitted values", y = "Residuals") +
+  theme_bw()
+ggplot.mix
+
+range(ranef(sm.splines.mix$lme))
+shapiro.test(resid(sm.splines.mix$gam))
+shapiro.test(resid(sm.splines.mix$lme))
+````
+
+```{r}
+plot.gam(sm.splines.ni$gam, all.terms = TRUE)
+summary(sm.splines.ni$gam)
+summary(sm.splines.ni$lme)
+fitted.ni <- fitted(sm.splines.ni$lme)
+resid.ni <- resid(sm.splines.ni$lme)
+df.ni <- data.frame(fitted.ni, resid.ni)
+ggplot.ni <- ggplot(df.ni, aes(x = fitted.ni, y = resid.ni)) +
+  geom_point() +
+  geom_smooth() +
+  labs(title = "Residuals vs Fitted values NI", x = "Fitted values", y = "Residuals") +
+  theme_bw()
+ggplot.ni
+# plot(fitted(sm.splines.ni$lme),resid(sm.splines.ni$lme))
+# abline(h = 0, col="red")
+
+summary(sm.splines.1$gam)
+summary(sm.splines.1$lme)
+plot(sm.splines.1$gam, pages = 1, scheme = 1, shade = TRUE, shade.col = "lightblue")
+plot.gam(sm.splines.1$gam, all.terms = TRUE)
+vis.gam(sm.splines.1$gam, view = c("Avg_Drinks_current", "Avg_MJ_current"), plot.type = "contour")
+vis.gam(sm.splines.1$gam, view = c("Avg_Drinks_current", "Avg_MJ_current"), plot.type = "persp")
+
+
+fitted.1 <- fitted(sm.splines.1$lme)
+resid.1 <- resid(sm.splines.1$lme)
+df.1 <- data.frame(fitted.1, resid.1)
+ggplot.1 <- ggplot(df.1, aes(x = fitted.1, y = resid.1)) +
+  geom_point() +
+  geom_smooth() +
+  labs(title = "Residuals vs Fitted values Spline 1", x = "Fitted values", y = "Residuals") +
+  theme_bw()
+ggplot.1
+
+
+# summary(sm.splines.2$gam)
+# summary(sm.splines.2$lme)
+# plot.gam(sm.splines.2$gam, all.terms = TRUE)
+# 
+# fitted.2 <- fitted(sm.splines.2$lme)
+# resid.2 <- resid(sm.splines.2$lme)
+# df.2 <- data.frame(fitted.2, resid.2)
+# ggplot.2 <- ggplot(df.2, aes(x = fitted.2, y = resid.2)) +
+#   geom_point() +
+#   geom_smooth() +
+#   labs(title = "Residuals vs Fitted values Spline 2", x = "Fitted values", y = "Residuals") +
+#   theme_bw()
+# ggplot.2
+
+summary(sm.splines.mix$gam)
+summary(sm.splines.mix$lme)
+plot.gam(sm.splines.mix$gam, all.terms = TRUE)
+fitted.mix <- fitted(sm.splines.mix$lme)
+resid.mix <- resid(sm.splines.mix$lme)
+df.mix <- data.frame(fitted.mix, resid.mix)
+ggplot.mix <- ggplot(df.mix, aes(x = fitted.mix, y = resid.mix)) +
+  geom_point(alpha = 0.3) +
+  geom_smooth() +
+  labs(title = "Residuals vs Fitted values Spline mix", x = "Fitted values", y = "Residuals") +
+  theme_bw()
+ggplot.mix
+
+
+AIC(sm.splines.ni, sm.splines.1, sm.splines.mix)
+```
+
+```{r gamm full model}
+fm.splines.ni <- gamm(
+  GPA ~ s(Avg_Drinks_current, bs = "ps") + s(Avg_MJ_current, bs = "ps") + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES,
+  data = outlier.removed,
+  na.action = na.exclude,
+  correlation = corARMA(p = 1, q = 1, form = ~ Time | BARCS_ID)
+)
+
+
+fm.splines.1 <- gamm(
+  GPA ~ te(Avg_Drinks_current, Avg_MJ_current, bs = "ps") + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES,
+  random = list(BARCS_ID = ~ 1),
+  data = outlier.removed,
+  na.action = na.exclude,
+  correlation = corARMA(p = 1, q = 1, form = ~ Time | BARCS_ID)
+)
+
+
+fm.splines.mix <- gamm(
+  GPA ~ Avg_Drinks_current + s(Avg_MJ_current, bs = "ps") + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES,
+  data = outlier.removed,
+  na.action = na.exclude,
+  correlation = corARMA(p = 1, q = 1, form = ~ Time | BARCS_ID)
+)
+
+fm.splines.mix.2 <- gamm(
+  GPA ~ s(Avg_Drinks_current, bs = "ps") + Avg_MJ_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES,
+  data = outlier.removed,
+  na.action = na.exclude,
+  correlation = corARMA(p = 1, q = 1, form = ~ Time | BARCS_ID)
+)
+
+summary(fm.splines.ni$gam)
+summary(fm.splines.ni$lme)
+plot.gam(fm.splines.ni$gam)
+fm.fitted.ni <- fitted(fm.splines.ni$lme)
+fm.resid.ni <- resid(fm.splines.ni$lme)
+fm.df.ni <- data.frame(fm.fitted.ni, fm.resid.ni)
+fm.ggplot.ni <- ggplot(fm.df.ni, aes(x = fm.fitted.ni, y = fm.resid.ni)) +
+  geom_point() +
+  geom_smooth() +
+  labs(title = "Residuals vs Fitted values Spline mix (fm)", x = "Fitted values", y = "Residuals") +
+  theme_bw()
+fm.ggplot.ni
+
+
+summary(fm.splines.1$gam)
+summary(fm.splines.1$lme)
+plot.gam(fm.splines.1$gam)
+vis.gam(sm.splines.1$gam, view = c("Avg_Drinks_current", "Avg_MJ_current"), plot.type = "contour")
+vis.gam(sm.splines.1$gam, view = c("Avg_Drinks_current", "Avg_MJ_current"), plot.type = "persp")
+
+fm.fitted.1 <- fitted(fm.splines.1$lme)
+fm.resid.1 <- resid(fm.splines.1$lme)
+fm.df.1 <- data.frame(fm.fitted.1, fm.resid.1)
+fm.ggplot.1 <- ggplot(fm.df.1, aes(x = fm.fitted.1, y = fm.resid.1)) +
+  geom_point() +
+  geom_smooth() +
+  labs(title = "Residuals vs Fitted values Spline mix (fm)", x = "Fitted values", y = "Residuals") +
+  theme_bw()
+fm.ggplot.1
+
+summary(fm.splines.mix$gam)
+summary(fm.splines.mix$lme)
+plot.gam(fm.splines.mix$gam)
+fm.fitted.mix <- fitted(fm.splines.mix$lme)
+fm.resid.mix <- resid(fm.splines.mix$lme)
+fm.df.mix <- data.frame(fm.fitted.mix, fm.resid.mix)
+fm.ggplot.mix <- ggplot(fm.df.mix, aes(x = fm.fitted.mix, y = fm.resid.mix)) +
+  geom_point() +
+  geom_smooth() +
+  labs(title = "Residuals vs Fitted values Spline mix (fm)", x = "Fitted values", y = "Residuals") +
+  theme_bw()
+fm.ggplot.mix
+
+summary(fm.splines.mix.2$gam)
+summary(fm.splines.mix.2$lme)
+plot.gam(fm.splines.mix.2$gam)
+fm.fitted.mix.2 <- fitted(fm.splines.mix.2$lme)
+fm.resid.mix.2 <- resid(fm.splines.mix.2$lme)
+fm.df.mix.2 <- data.frame(fm.fitted.mix.2, fm.resid.mix.2)
+fm.ggplot.mix.2 <- ggplot(fm.df.mix.2, aes(x = fm.fitted.mix.2, y = fm.resid.mix.2)) +
+  geom_point() +
+  geom_smooth() +
+  labs(title = "Residuals vs Fitted values Spline mix (fm)", x = "Fitted values", y = "Residuals") +
+  theme_bw()
+fm.ggplot.mix.2
+
+
+
+
+AIC(fm.splines.ni, fm.splines.1, fm.splines.mix, fm.splines.mix.2)
+```

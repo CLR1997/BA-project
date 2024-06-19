@@ -1,0 +1,338 @@
+---
+title: "Section 6.2 Final"
+author: "Colin Linke"
+date: "2024-06-19"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+source("Code Transformations.R")
+```
+
+Die models neu fitten:
+```{r "models"}
+full.model.ARMA11 <- lme(GPA ~ 1 + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  + Cluster_current * Semester , random = ~ 1 | BARCS_ID,data = data.file.long, na.action = na.exclude, method = "REML", correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+
+small.model.ARMA11 <- lme(GPA ~ Cluster_current * Semester, random = ~ 1 | BARCS_ID, data = data.file.long, na.action = na.exclude, method = "REML",  correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+
+pseudo.trajectory.ARMA11 <- lme(GPA ~ 1 + Fager4_binary + FH_binary + Sex + Cluster_SEM1 + Semester + Age1stround + SATMath + SATVerbal + SATWriting + STAI_SELF_Total + BDI_SELF_Total + Parental_SES + Cluster_SEM1 * Semester + Group_transition1 * Semester, random = ~ 1 | BARCS_ID, data = data.file.long, method = "REML", na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+```
+
+In den latex tabellen habe ich dann oft einfach per hand die namen des models verändert / Reihenfolge verändert.
+
+Die drei resid vs fitted plots in section 6.1
+
+```{r "6.1"}
+fitted.fm <- fitted(full.model.ARMA11)
+resid.fm <- resid(full.model.ARMA11)
+df.fm <- data.frame(fitted.fm, resid.fm)
+
+fitted.sm <- fitted(small.model.ARMA11)
+resid.sm <- resid(small.model.ARMA11)
+df.sm <- data.frame(fitted.sm, resid.sm)
+
+fitted.pt <- fitted(pseudo.trajectory.ARMA11)
+resid.pt <- resid(pseudo.trajectory.ARMA11)
+df.pt <- data.frame(fitted.pt, resid.pt)
+
+ggplot.fm <- ggplot(df.fm, aes(x = fitted.fm, y = resid.fm)) +
+  geom_point(alpha = 0.3) +
+  geom_smooth() +
+  labs(title = "Residuals vs Fitted values Full Model", x = "Fitted values", y = "Residuals") +
+  theme_bw()
+
+
+ggplot.sm <- ggplot(df.fm, aes(x = fitted.sm, y = resid.sm)) +
+  geom_point(alpha = 0.3) +
+  geom_smooth() +
+  labs(title = "Residuals vs Fitted values Small Model", x = "Fitted values", y = "Residuals") +
+  theme_bw()
+
+
+ggplot.pt <- ggplot(df.pt, aes(x = fitted.pt, y = resid.pt)) +
+  geom_point(alpha = 0.3) +
+  geom_smooth() +
+  labs(title = "Residuals vs Fitted values Pseudo Trajectory", x = "Fitted values", y = "Residuals") +
+  theme_bw()
+
+
+ggplot.fm
+ggplot.sm
+ggplot.pt
+```
+
+
+Die tabelle mit den ranges. Ich hab das am ende in Latex per hand geändert weil latex, warum auch immer, e-06 als 10^-6 verwendet und auf 0 gerundet worden ist. Verstehe ich nicht ganz warum, aber na ja. 
+```{r "range ri"}
+range.ri <- data.frame(full.model = as.vector(range(ranef(full.model.ARMA11))),
+                       small.model = as.vector(range(ranef(small.model.ARMA11))),
+                       pseudo.trajectory = as.vector(range(ranef(pseudo.trajectory.ARMA11))))
+
+rownames(range.ri) <- c("min", "max")
+range.ri
+
+stargazer(range.ri)
+```
+
+The corresponding gls models and anova tests:
+
+```{r test RE / pooling model}
+full.model.gls <- gls(GPA ~ 1 + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  + Semester * Cluster_current, data = data.file.long, na.action = na.exclude, method = "REML", correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+anova(full.model.gls, full.model.ARMA11)
+
+small.model.gls <- gls(GPA ~ Semester * Cluster_current, data = data.file.long, na.action = na.exclude, method = "REML", correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+anova(small.model.gls, small.model.ARMA11)
+
+pseudo.trajectory.gls <- gls(GPA ~ 1 + Fager4_binary + FH_binary + Sex + Cluster_SEM1 + Semester + Age1stround + SATMath + SATVerbal + SATWriting + STAI_SELF_Total + BDI_SELF_Total + Parental_SES + Cluster_SEM1 * Semester + Group_transition1 * Semester, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+anova(pseudo.trajectory.ARMA11, pseudo.trajectory.gls)
+```
+
+GVIF output:
+```{r "multicollinearity"}
+stargazer(vif(full.model.gls))
+stargazer(vif(pseudo.trajectory.gls))
+```
+
+Normality test: 
+```{r "swnt"}
+shapiro.test(resid(full.model.ARMA11))
+shapiro.test(resid(small.model.ARMA11))
+shapiro.test(resid(pseudo.trajectory.ARMA11))
+```
+
+
+
+
+Section 6.2
+```{r "candidate models"}
+
+sm.nlme.robust2.1 <- lme(GPA ~ Avg_Drinks_current * Semester + Avg_Drinks_current * Avg_MJ_current + Avg_MJ_current * Semester, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, method = "ML")
+
+sm.nlme.robust2.2 <- lme(GPA ~ Avg_Drinks_current * Semester + Avg_Drinks_current * Avg_MJ_current + Avg_MJ_current * Semester, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID), method = "ML")
+
+sm.nlme.ARMA11 <- lme(GPA ~ Cluster_current * Semester, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID), method = "ML")
+
+sm.nlme.noSemester <- lme(GPA ~ Avg_Drinks_current * Avg_MJ_current, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID), method = "ML")
+
+sm.nlme.noSemester.time <- lme(GPA ~ Avg_Drinks_current * Avg_MJ_current + Avg_Drinks_current*Time + Avg_MJ_current*Time, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID), method = "ML")
+
+sm.nlme.noSemester.timeRE <- lme(GPA ~ Avg_Drinks_current * Avg_MJ_current + Avg_Drinks_current*Time + Avg_MJ_current*Time, random = ~ 1 + Time| BARCS_ID, data = data.file.long, na.action = na.exclude, method = "ML")
+
+
+sm.nlme.ni <- lme(GPA ~ Avg_Drinks_current + Avg_MJ_current, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID), method = "ML")
+
+fmri.nlme.robust2.1 <- lme(GPA ~ 1 + Avg_Drinks_current*Avg_MJ_current + Avg_Drinks_current*Semester + Avg_MJ_current*Semester  + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES, method = "ML",
+                       random = ~ 1 | BARCS_ID, 
+                     data = data.file.long, na.action = na.exclude)
+
+fmri.nlme.robust2.2 <- lme(GPA ~ 1 + Avg_Drinks_current*Avg_MJ_current + Avg_Drinks_current*Semester + Avg_MJ_current*Semester  + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES, method = "ML",
+                       random = ~ 1 | BARCS_ID, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID), 
+                     data = data.file.long, na.action = na.exclude)
+
+
+fmri.nlme.ARMA11 <- lme(GPA ~ Cluster_current * Semester  + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES, method = "ML",
+                         random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+
+fmri.nlme.noSemester <- lme(GPA ~ Avg_Drinks_current * Avg_MJ_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES, method = "ML",
+                         random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+
+fmri.nlme.noSemester.time <- lme(GPA ~ Avg_Drinks_current * Avg_MJ_current + Avg_Drinks_current*Time + Avg_MJ_current*Time + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES, method = "ML",
+                         random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+
+fmri.nlme.noSemester.timeRE <- lme(GPA ~ Avg_Drinks_current * Avg_MJ_current + Avg_Drinks_current*Time + Avg_MJ_current*Time + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES, method = "ML",
+                         random = ~ 1 + Time| BARCS_ID, data = data.file.long, na.action = na.exclude)
+
+
+AIC_values.sm.r2 <- AIC(sm.nlme.robust2.1, sm.nlme.robust2.2, sm.nlme.ARMA11, sm.nlme.noSemester, sm.nlme.noSemester.time, sm.nlme.noSemester.timeRE)
+BIC_values.sm.r2 <- BIC(sm.nlme.robust2.1, sm.nlme.robust2.2, sm.nlme.ARMA11, sm.nlme.noSemester, sm.nlme.noSemester.time, sm.nlme.noSemester.timeRE)
+df_scores_sm.r2 <- data.frame(AIC_values.sm.r2, BIC_values.sm.r2)
+df_scores_sm.r2 ####all models have exactly 3802 observation and 1140 groups (# of students)
+
+
+
+AIC_values.fmri.r2 <- AIC(fmri.nlme.robust2.1, fmri.nlme.robust2.2, fmri.nlme.ARMA11, fmri.nlme.noSemester, fmri.nlme.noSemester.time, fmri.nlme.noSemester.timeRE)
+BIC_values.fmri.r2  <- BIC(fmri.nlme.robust2.1, fmri.nlme.robust2.2, fmri.nlme.ARMA11, fmri.nlme.noSemester, fmri.nlme.noSemester.time, fmri.nlme.noSemester.timeRE)
+df_scores_fmri.r2 <- data.frame(AIC_values.fmri.r2, BIC_values.fmri.r2)
+df_scores_fmri.r2
+```
+
+Stargazer
+```{r "stargazer output candidates"}
+stargazer(df_scores_sm.r2[,-3], summary = FALSE)
+stargazer(df_scores_fmri.r2[,-3], summary = FALSE)
+```
+
+
+```{r "interaction"}
+sm.nlme.ni <- lme(GPA ~ Avg_Drinks_current + Avg_MJ_current, random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID), method = "ML")
+
+fmri.nlme.simple <- lme(GPA ~ Avg_Drinks_current + Avg_MJ_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES, method = "ML",
+                         random = ~ 1| BARCS_ID, data = data.file.long, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+
+anova(fmri.nlme.noSemester, fmri.nlme.simple)
+anova(sm.nlme.noSemester, sm.nlme.ni)
+
+AIC_interaction <- AIC(sm.nlme.noSemester, sm.nlme.ni, fmri.nlme.noSemester,fmri.nlme.simple)
+BIC_interaction <- BIC(sm.nlme.noSemester, sm.nlme.ni, fmri.nlme.noSemester,fmri.nlme.simple)
+df_interaction <- data.frame(AIC_interaction, BIC_interaction)
+stargazer(df_interaction[,-3], summary = FALSE) 
+```
+
+
+
+Modelle ohne outliers. Das erste model und der plot von dem sind das small model in der Arbeit. 
+
+```{r}
+sm.outlier.barebones <- lme(GPA ~ Avg_Drinks_current + Avg_MJ_current, random = ~ 1| BARCS_ID, data = outlier.removed, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID), method = "REML")
+
+sm.outlier.barebones.2 <- lme(GPA ~ Avg_Drinks_current + Avg_MJ_current, random = ~ 1 + Avg_Drinks_current + Avg_MJ_current| BARCS_ID, data = outlier.removed, na.action = na.exclude, method = "REML", control = list(maxIter = 1000, tolerance = 1e-2, opt = "optim"))
+
+sm.outlier.barebones.3 <- lme(GPA ~ Avg_Drinks_current + Avg_MJ_current, random = ~ 1 + Avg_Drinks_current + Avg_MJ_current| BARCS_ID, data = outlier.removed, na.action = na.exclude, method = "REML", control = list(maxIter = 1000, tolerance = 1e-2, opt = "optim"))
+
+sm.outlier.barebones.4 <- lme(GPA ~ Avg_Drinks_current + Avg_MJ_current, random = ~ 1 + Avg_Drinks_current + Avg_MJ_current| BARCS_ID, data = outlier.removed, na.action = na.exclude, method = "REML", control = list(maxIter = 1000, tolerance = 1e-2, opt = "optim"))
+
+anova(sm.outlier.barebones, sm.outlier.barebones.2)
+anova(sm.outlier.barebones, sm.outlier.barebones.3)
+anova(sm.outlier.barebones, sm.outlier.barebones.4)
+
+smb.fitted <- fitted(sm.outlier.barebones)
+smb.resid <- resid(sm.outlier.barebones)
+smb.df <- data.frame(smb.fitted, smb.resid)
+
+smb.fitted.2 <- fitted(sm.outlier.barebones.2)
+smb.resid.2 <- resid(sm.outlier.barebones.2)
+smb.df.2 <- data.frame(smb.fitted.2, smb.resid.2)
+
+smb.fitted.3 <- fitted(sm.outlier.barebones.3)
+smb.resid.3 <- resid(sm.outlier.barebones.3)
+smb.df.3 <- data.frame(smb.fitted.3, smb.resid.3)
+
+smb.fitted.4 <- fitted(sm.outlier.barebones.4)
+smb.resid.4 <- resid(sm.outlier.barebones.4)
+smb.df.4 <- data.frame(smb.fitted.4, smb.resid.4)
+
+smb.ggplot <- ggplot(smb.df, aes(x = smb.fitted, y = smb.resid)) +
+  geom_point() +
+  geom_smooth() +
+  labs(title = "Residuals vs Fitted values Spline mix (fm)", x = "Fitted values", y = "Residuals") +
+  theme_bw()
+smb.ggplot
+
+smb.ggplot.2 <- ggplot(smb.df.2, aes(x = smb.fitted.2, y = smb.resid.2)) +
+  geom_point() +
+  geom_smooth() +
+  labs(title = "Residuals vs Fitted values Spline mix (fm)", x = "Fitted values", y = "Residuals") +
+  theme_bw()
+smb.ggplot.2
+
+smb.ggplot.3 <- ggplot(smb.df.3, aes(x = smb.fitted.3, y = smb.resid.3)) +
+  geom_point() +
+  geom_smooth() +
+  labs(title = "Residuals vs Fitted values Spline mix (fm)", x = "Fitted values", y = "Residuals") +
+  theme_bw()
+smb.ggplot.3
+
+smb.ggplot.4 <- ggplot(smb.df.4, aes(x = smb.fitted.4, y = smb.resid.4)) +
+  geom_point() +
+  geom_smooth() +
+  labs(title = "Residuals vs Fitted values Spline mix (fm)", x = "Fitted values", y = "Residuals") +
+  theme_bw()
+smb.ggplot.4
+```
+Für das full model, das erste wurde in der BA verwendet, die anderen drei konnten nicht gefittet werden, deswegen auskommentiert.
+
+```{r}
+fm.outlier.barebones <- lme(GPA ~ Avg_Drinks_current + Avg_MJ_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES, random = ~ 1| BARCS_ID, data = outlier.removed, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID), method = "REML")
+
+# fm.outlier.barebones.2 <- lme(GPA ~ Avg_Drinks_current + Avg_MJ_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES, random = ~ 1 + Avg_Drinks_current + Avg_MJ_current| BARCS_ID, data = outlier.removed, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID), method = "REML", control = list(maxIter = 1000, tolerance = 1e-2, opt = "optim"))
+# 
+# fm.outlier.barebones.3 <- lme(GPA ~ Avg_Drinks_current + Avg_MJ_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES, random = ~ 1 + Avg_Drinks_current + Avg_MJ_current| BARCS_ID, data = outlier.removed, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID), method = "REML", control = list(maxIter = 1000, tolerance = 1e-2, opt = "optim"))
+# 
+#fm.outlier.barebones.4 <- lme(GPA ~ Avg_Drinks_current + Avg_MJ_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES, random = ~ 1 + Avg_Drinks_current + Avg_MJ_current| BARCS_ID, data = outlier.removed, na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID), method = "REML", control = list(maxIter = 1000, tolerance = 1e-2, opt = "optim"))
+
+```
+
+Hier die plots mit titel: 
+```{r}
+ggplot.fmo + ggtitle("Numerical Full Model residuals vs fitted")
+ggplot.smo + ggtitle("Numerical Small Model residuals vs fitted")
+```
+
+coefficients
+```{r}
+stargazer(sm.outlier.barebones, fm.outlier.barebones, fm.outlier.int)
+```
+
+range of random intercept
+```{r}
+range.numeric <- data.frame(full.model = as.vector(range(ranef(fm.outlier.barebones))),
+                       small.model = as.vector(range(ranef(sm.outlier.barebones))))
+rownames(range.numeric) <- c("min", "max")
+range.numeric
+stargazer(range.numeric)
+```
+
+
+
+Shapiro Wilks test
+```{r}
+shapiro.test(sm.outlier.barebones)
+shapiro.test(fm.outlier.barebones)
+```
+
+
+
+
+Section 6.3
+```{r splines}
+sm.splines.ni <- gamm(
+  GPA ~ s(Avg_Drinks_current, bs = "ps") + s(Avg_MJ_current, bs = "ps"),
+  data = outlier.removed,
+  na.action = na.exclude,
+  correlation = corARMA(p = 1, q = 1, form = ~ Time | BARCS_ID), method = "ML"
+)
+
+sm.splines.1 <- gamm(
+  GPA ~ te(Avg_Drinks_current, Avg_MJ_current, bs = "ps"),
+  random = list(BARCS_ID = ~ 1),
+  data = outlier.removed,
+  na.action = na.exclude,
+  correlation = corARMA(p = 1, q = 1, form = ~ Time | BARCS_ID), method = "ML"
+)
+
+sm.splines.mix <- gamm(
+  GPA ~ Avg_Drinks_current + s(Avg_MJ_current, bs = "ps"),
+  data = outlier.removed,
+  na.action = na.exclude,
+  correlation = corARMA(p = 1, q = 1, form = ~ Time | BARCS_ID), method = "ML"
+)
+
+sm.splines.mix.2 <- gamm(
+  GPA ~ Avg_MJ_current + s(Avg_Drinks_current, bs = "ps"),
+  data = outlier.removed,
+  na.action = na.exclude,
+  correlation = corARMA(p = 1, q = 1, form = ~ Time | BARCS_ID), method = "ML"
+)
+
+AIC.smspline <- AIC(sm.splines.ni, sm.splines.1, sm.splines.mix, sm.splines.mix.2)
+BIC.smspline <- BIC(sm.splines.ni, sm.splines.1, sm.splines.mix, sm.splines.mix.2)
+
+df.sm.spline <- data.frame(AIC.smspline, BIC.smspline)
+df.sm.spline[,-3]
+```
+
+Der Rest im Bezug auf die splines
+```{r "splines 2"}
+stargazer(df.sm.spline[,-3], summary = FALSE)
+
+stargazer(sm.splines.mix)
+summary(sm.splines.mix$lme)
+plot.gam(sm.splines.mix$gam, all.terms = TRUE, main = "Marijuana consumption spline function")
+ggplot.mix + ggtitle("GAMM residuals vs fitted")
+
+range(random.effects(sm.splines.mix$lme))
+```

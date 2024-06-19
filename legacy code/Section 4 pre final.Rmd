@@ -1,0 +1,97 @@
+---
+title: "Section 4 alternative"
+author: "Colin Linke"
+date: "2024-06-04"
+output: html_document
+---
+
+```{r "gamlss"}
+#library(gamlss)
+outlier.removed2 <- outlier.removed %>% select(BARCS_ID, GPA, Avg_Drinks_current, Avg_MJ_current, Sex, Time, Semester, Age1stround, SATMath, SATWriting, Fager4_binary, BDI_SELF_Total, FH_binary, sum.GPAna)
+gamlss1 <- gamlss(formula = GPA ~ pb(Avg_Drinks_current) * pb(Avg_MJ_current) + random(BARCS_ID) + Sex + Time, 
+                  sigma.formula = ~pb(Avg_Drinks_current) * pb(Avg_MJ_current) + Sex + Time + Age1stround + SATMath + SATWriting + Avg_Drinks_current + Avg_MJ_current
+                    ,data = na.omit(outlier.removed2), na.action = na.exclude, family = BCCG)
+summary(gamlss1)
+plot(residuals(gamlss1), fitted(gamlss1),
+     xlab = "fitted values", ylab = "Residuals")
+
+gamlss2 <- gamlss(formula = GPA ~ pb(Avg_Drinks_current) * pb(Avg_MJ_current) + random(BARCS_ID) + Time, 
+                  sigma.formula = ~pb(Avg_Drinks_current) * pb(Avg_MJ_current) - pb(Avg_Drinks_current) + Sex + Semester + Age1stround + SATMath + SATWriting,
+                  nu.formula = ~pb(Avg_Drinks_current) * pb(Avg_MJ_current) - pb(Avg_Drinks_current) + Sex + Semester + Age1stround + SATMath + SATWriting
+                    ,data = na.omit(outlier.removed2), na.action = na.exclude, family = BCCG, method = CG())
+
+summary(gamlss2)
+plot(residuals(gamlss2), fitted(gamlss2),
+     xlab = "fitted values", ylab = "Residuals")
+
+gamlss3 <- gamlss(formula = GPA ~ pb(Avg_Drinks_current) * pb(Avg_MJ_current) * Time + random(BARCS_ID), 
+                  sigma.formula = ~pb(Avg_Drinks_current) * pb(Avg_MJ_current) - pb(Avg_Drinks_current) + Sex + Time + Age1stround + SATMath + SATWriting,
+                  nu.formula = ~Time * pb(Avg_MJ_current) + SATMath + SATWriting
+                    ,data = na.omit(outlier.removed2), na.action = na.exclude, family = BCCG)
+summary(gamlss3)
+plot(residuals(gamlss3), fitted(gamlss3),
+     xlab = "fitted values", ylab = "Residuals")
+
+gamlss4 <- gamlss(formula = GPA ~ pb(Avg_Drinks_current) * pb(Avg_MJ_current) * Time + random(BARCS_ID), 
+                  sigma.formula = ~pb(Avg_Drinks_current) * pb(Avg_MJ_current) - pb(Avg_Drinks_current) + Sex + Time + Age1stround + SATMath + SATWriting + Fager4_binary + BDI_SELF_Total + FH_binary,
+                  nu.formula = ~Time * pb(Avg_MJ_current) + SATMath + SATWriting + Sex + Fager4_binary + BDI_SELF_Total + FH_binary ,
+                  tau.formula = ~ Time * pb(Avg_MJ_current) + SATMath + SATWriting + Sex + Fager4_binary + BDI_SELF_Total + FH_binary,
+                  data = na.omit(outlier.removed2), na.action = na.exclude, family = BCCG,  
+                  control = gamlss.control(n.cyc = 20))
+
+summary(gamlss4)
+plot(residuals(gamlss4), fitted(gamlss4),
+     xlab = "fitted values", ylab = "Residuals")
+
+
+gamlss5 <- gamlss(formula = GPA ~ pb(Avg_Drinks_current) * pb(Avg_MJ_current) * Time + random(BARCS_ID), 
+                  sigma.formula = ~pb(Avg_Drinks_current) * pb(Avg_MJ_current) - pb(Avg_Drinks_current) + Sex + Time + Age1stround + SATMath + SATWriting + Fager4_binary + BDI_SELF_Total + FH_binary,
+                  nu.formula = ~Time + pb(Avg_MJ_current) + SATMath + SATWriting + Sex + Fager4_binary + BDI_SELF_Total + FH_binary,
+                  tau.formula = ~ Time * pb(Avg_MJ_current) + SATMath + SATWriting + Sex + Fager4_binary + BDI_SELF_Total + FH_binary,
+                  data = na.omit(outlier.removed2), na.action = na.exclude, family = BCCG(sigma.link = "identity"),  
+                  control = gamlss.control(n.cyc = 12))
+
+summary(gamlss5)
+plot(residuals(gamlss5), fitted(gamlss5),
+     xlab = "fitted values", ylab = "Residuals")
+
+
+gamlss6 <- gamlss(formula = GPA ~ pb(Avg_Drinks_current) * pb(Avg_MJ_current) * Time + random(BARCS_ID), 
+                  sigma.formula = ~ Time + pb(Avg_MJ_current) + Sex + Time + Age1stround + SATMath + SATWriting + Fager4_binary + BDI_SELF_Total + FH_binary,
+                  nu.formula = ~ Time + pb(Avg_MJ_current) + Sex + Time + Age1stround + SATMath + SATWriting + Fager4_binary + BDI_SELF_Total + FH_binary,
+                  tau.formula = ~ Time + pb(Avg_MJ_current) + Sex + Time + Age1stround + SATMath + SATWriting + Fager4_binary + BDI_SELF_Total + FH_binary,
+                  data = na.omit(outlier.removed2), na.action = na.exclude, family = BCCG,  
+                  control = gamlss.control(n.cyc = 20))
+
+summary(gamlss6)
+plot(residuals(gamlss6), fitted(gamlss6),
+     xlab = "fitted values", ylab = "Residuals")
+
+
+gamlss7 <- gamlss(formula = GPA ~ pb(Avg_Drinks_current) * pb(Avg_MJ_current) * Time + sum.GPAna + random(BARCS_ID), 
+                  sigma.formula = ~ Time + pb(Avg_MJ_current) + Sex + Time + Age1stround + SATMath + SATWriting + Fager4_binary + BDI_SELF_Total + FH_binary + sum.GPAna,
+                  nu.formula = ~ Time + pb(Avg_MJ_current) + Sex + Time + Age1stround + SATMath + SATWriting + Fager4_binary + BDI_SELF_Total + FH_binary + sum.GPAna,
+                  tau.formula = ~ Time + pb(Avg_MJ_current) + Sex + Time + Age1stround + SATMath + SATWriting + Fager4_binary + BDI_SELF_Total + FH_binary + sum.GPAna,
+                  data = na.omit(outlier.removed2), na.action = na.exclude, family = BCCG,  
+                  control = gamlss.control(n.cyc = 9))
+
+summary(gamlss7)
+plot(fitted(gamlss7), residuals(gamlss7),
+     xlab = "fitted values", ylab = "Residuals")
+```
+
+
+
+
+```{r}
+plot(gamlss7, shade = TRUE, select = 2,
+main = "Glatter Effekt der Wohnfl ̈ache", xlab = "Wohnfl ̈ache",
+     cex.axis = 0.8)
+
+term.plot(object = gamlss7, what = "mu", rug = TRUE, cex.main = 1)
+term.plot(object = gamlss7, what = "sigma", rug = TRUE, cex.main = 1)
+
+term.plot(object = gamlss7, what = "nu", rug = TRUE, cex.main = 1)
+term.plot(object = gamlss7, what = "tau", rug = TRUE, cex.main = 1)
+
+```

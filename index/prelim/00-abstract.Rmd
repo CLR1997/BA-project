@@ -1,5 +1,0 @@
-# Abstract {-}
-
-The preface pretty much says it all.  \par
-
-Second paragraph of abstract starts here.

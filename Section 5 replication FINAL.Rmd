@@ -1,0 +1,149 @@
+---
+title: "Section 5 replication FINAL"
+author: "Colin Linke"
+date: "2024-06-19"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r "loading data", echo=FALSE, include=FALSE}
+source("Code Transformations.R")
+```
+
+
+```{r models used}
+full.model <- lme(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES + Sex*Cluster_current + Semester*Cluster_current + Sex*Semester + Semester, random = ~1 | BARCS_ID, data = data.file.long, na.action = na.exclude, method = "ML") 
+
+full.model.reduced.interactions <- lme(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  + Semester*Cluster_current + Semester, random = ~ 1 | BARCS_ID,data = data.file.long, na.action = na.exclude, method = "ML")
+
+small.model <- lme(GPA ~ Cluster_current * Semester, random = ~ 1 | BARCS_ID, data = data.file.long, na.action = na.exclude, method = "ML")
+
+pseudo.trajectory <- lme(GPA ~ 1 + Fager4_binary + FH_binary + Sex + Cluster_SEM1 + Semester + Age1stround + SATMath + SATVerbal + SATWriting + STAI_SELF_Total + BDI_SELF_Total + Parental_SES + Cluster_SEM1 * Semester + Group_transition1 * Semester, random = ~ 1 | BARCS_ID, data = data.file.long, method = "REML", na.action = na.exclude)
+
+fm.time.slope <- lme(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES + Sex*Cluster_current + Time*Cluster_current + Sex*Time + Time , random = ~ 1 + Time| BARCS_ID, data = data.file.long, na.action = na.exclude, method = "ML") 
+```
+interactions test
+```{r "int test"}
+anova(full.model.reduced.interactions, full.model)
+```
+
+To get the VarCovar structure:
+
+```{r Correlation structure}
+full.model.AR1 <- lme(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  + Semester*Cluster_current + Semester,
+                     random = ~ 1 | BARCS_ID, correlation = corAR1(form = ~ Time| BARCS_ID), 
+                     data = data.file.long, na.action = na.exclude, method = "ML" )  ##N = 3361
+
+full.model.Unstructured <- lme(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  + Semester*Cluster_current + Semester,
+                       random = ~ 1 | BARCS_ID, correlation = corSymm(form = ~ Time| BARCS_ID), 
+                     data = data.file.long, na.action = na.exclude, method = "ML"  ) ## N = 3361
+
+full.model.CompSymm <- lme(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  + Semester*Cluster_current + Semester,
+                       random = ~ 1 | BARCS_ID, correlation = corCompSymm(form = ~ Time| BARCS_ID), 
+                     data = data.file.long, na.action = na.exclude, method = "ML"  ) ## N = 3361
+
+full.model.Toelpitz <- lme(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  + Semester*Cluster_current + Semester,
+                       random = ~ 1 | BARCS_ID, correlation = corARMA(p = 0, q = 3, form = ~ Time| BARCS_ID),
+                     data = data.file.long, na.action = na.exclude, method = "ML"  ) ## N = 3361
+
+full.model.Exponential <- lme(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  + Semester*Cluster_current + Semester,
+                       random = ~ 1 | BARCS_ID, correlation = corExp(form = ~ Time| BARCS_ID), 
+                     data = data.file.long, na.action = na.exclude, method = "ML"  ) ## N = 3361
+
+full.model.gaussian <- lme(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  + Semester*Cluster_current + Semester,
+                       random = ~ 1 | BARCS_ID, correlation = corGaus(form = ~ Time| BARCS_ID), 
+                     data = data.file.long, na.action = na.exclude, method = "ML"  ) ## N = 3361
+
+full.model.MA1 <- lme(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  + Semester*Cluster_current + Semester,
+                       random = ~ 1 | BARCS_ID, correlation = corARMA(q = 1, form = ~ Time| BARCS_ID), 
+                     data = data.file.long, na.action = na.exclude, method = "ML" ) ## N = 3361
+
+full.model.ARMA11 <- lme(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  + Semester*Cluster_current + Semester,
+                       random = ~ 1 | BARCS_ID, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID), 
+                     data = data.file.long, na.action = na.exclude , method = "ML"  ) ## N = 3361
+
+full.model.ARMA12 <- lme(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  + Semester*Cluster_current + Semester,
+                       random = ~ 1 | BARCS_ID, correlation = corARMA(p = 1, q = 2, form = ~ Time| BARCS_ID), 
+                     data = data.file.long, na.action = na.exclude, method = "ML"   ) ## N = 3361
+
+full.model.ARMA21 <- lme(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  + Semester*Cluster_current + Semester,
+                       random = ~ 1 | BARCS_ID, correlation = corARMA(p = 2, q = 1, form = ~ Time| BARCS_ID), 
+                     data = data.file.long, na.action = na.exclude , method = "ML" ) ## N = 3361
+
+full.model.ARMA22 <- lme(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  + Semester*Cluster_current + Semester,
+                       random = ~ 1 | BARCS_ID, correlation = corARMA(p = 2, q = 2, form = ~ Time| BARCS_ID), 
+                     data = data.file.long, na.action = na.exclude , method = "ML") ## N = 3361
+
+AIC_values <- AIC(full.model.AR1, full.model.Unstructured, full.model.CompSymm, full.model.Toelpitz, full.model.Exponential, full.model.gaussian, full.model.MA1, full.model.ARMA11, full.model.ARMA12, full.model.ARMA21, full.model.ARMA22)
+BIC_values <- BIC(full.model.AR1, full.model.Unstructured, full.model.CompSymm, full.model.Toelpitz, full.model.Exponential, full.model.gaussian, full.model.MA1, full.model.ARMA11, full.model.ARMA12, full.model.ARMA21, full.model.ARMA22)
+df_scores_Cor <- data.frame(AIC_values, BIC_values)
+df_scores_Cor[,-3]
+```
+
+stargazer command
+```{r "stargazer varcov"}
+stargazer(df_scores_Cor[,-3], summary = FALSE, flip = F, title = "Correlation Structures Comparison")
+```
+
+Hab da verschiedene Einstellungen probiert, hat leider nie geklappt. Auskommentiert
+```{r "entirely estimated DO NOT RUN", echo = FALSE, include = FALSE}
+  # fmri.nlme.entirelyestimated <- lme(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  + Semester*Cluster_current + Semester,
+  #                      random = ~ 1 | BARCS_ID, correlation = corSymm(form = ~ Time| BARCS_ID),
+  #                      weights = varIdent(form = ~ 1 | BARCS_ID),
+  #                      data = data.file.long, na.action = na.exclude, control = list(opt = "optim", msMaxIter = 200))
+# AIC(fmri.nlme.entirelyestimated)
+```
+mit ARMA(1,1)
+
+```{r "ARMA1,1"}
+full.model.ARMA11 <- lme(GPA ~ 1 + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES  + Cluster_current * Semester , random = ~ 1 | BARCS_ID,data = data.file.long, na.action = na.exclude, method = "REML", correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+
+small.model.ARMA11 <- lme(GPA ~ Cluster_current * Semester, random = ~ 1 | BARCS_ID, data = data.file.long, na.action = na.exclude, method = "REML",  correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+
+pseudo.trajectory.ARMA11 <- lme(GPA ~ 1 + Fager4_binary + FH_binary + Sex + Cluster_SEM1 + Semester + Age1stround + SATMath + SATVerbal + SATWriting + STAI_SELF_Total + BDI_SELF_Total + Parental_SES + Cluster_SEM1 * Semester + Group_transition1 * Semester, random = ~ 1 | BARCS_ID, data = data.file.long, method = "REML", na.action = na.exclude, correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID))
+
+time.slope.ARMA11 <- lme(GPA ~ 1 + Cluster_current + Sex + Age1stround + SATMath + SATVerbal + SATWriting + Fager4_binary + FH_binary + STAI_SELF_Total + BDI_SELF_Total + Parental_SES + Sex*Cluster_current + Time*Cluster_current + Sex*Time + Time , random = ~ 1 + Time| BARCS_ID, data = data.file.long, na.action = na.exclude, method = "REML", correlation = corARMA(p = 1, q = 1, form = ~ Time| BARCS_ID),control = list(maxIter = 1000, tolerance = 1e-3, opt = "optim")) 
+
+```
+
+
+```{r "effect table"}
+stargazer(full.model.ARMA11, small.model.ARMA11, title = "Summary 'main' Model effects", type = "latex", font.size = "small")
+```
+
+Die covariablen mit hand rausgelöscht
+
+
+
+
+
+
+pseudo trajectory signifikanz
+```{r}
+Anova(pseudo.trajectory.ARMA11)#, test.statistic = "F",  robust= "hc3", correction = "Sidak")
+```
+
+stargazer befehl
+```{r "stargazer pt"}
+stargazer(full.model.ARMA11, small.model.ARMA11, title = "Summary 'main' Model effects", type = "latex", font.size = "small")
+
+```
+
+Die effect plots
+```{r "effect plots"}
+plot(effect("Cluster_current*Semester", full.model.ARMA11, robust= "hc3", correction = "Sidak"), main = "Full Model: Cluster & Semester")
+plot(effect("Cluster_current*Semester", small.model.ARMA11, robust= "hc3", correction = "Sidak"), main = "Small Model: Cluster & Semester")
+plot(effect("Cluster_current*Time", time.slope.ARMA11, robust= "hc3", correction = "Sidak"), main = "Time Model: Cluster & Semester")
+
+plot(effect("Sex", full.model.ARMA11, robust= "hc3", correction = "Sidak"), main = "Effect of Gender")
+plot(effect("Fager4_binary", full.model.ARMA11, robust= "hc3", correction = "Sidak"), main = "Effect of Smoking")
+
+plot(effect("Group_transition1", pseudo.trajectory.ARMA11, robust= "hc3", correction = "Sidak"), main = "Effect Cluster Transition")
+```
+
+
+
+
